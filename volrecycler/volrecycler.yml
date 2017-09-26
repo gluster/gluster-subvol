@@ -1,0 +1,66 @@
+#-- A PV for the big volume we're managing w/ this recycler instance
+# We're overloading the sc name here to ensure a 1:1 binding, but I think
+# there's a way to directly specify the PV name, but I have yet to get
+# that to work.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: glustersupervol-testvol
+spec:
+  capacity:
+    storage: 1Mi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: glustersupervol-testvol
+  glusterfs:
+    endpoints: glusterfs-cluster
+    path: testvol
+    readOnly: false
+
+---
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: glustersupervol-testvol
+  namespace: glusterfs
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Mi
+  storageClassName: glustersupervol-testvol
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: volrecycler
+  namespace: glusterfs
+spec:
+  containers:
+  - name: volrecycler
+    image: johnstrunk/volrecycler:latest
+    imagePullPolicy: Always
+    args:
+    #-- This needs to match "servers" in the glusterfs endpoint for the
+    #-- supervol pv
+    - "192.168.173.15:192.168.173.16:192.168.173.17"
+    #-- This needs to match "path" in the supervol pv
+    - "testvol"
+    #-- This needs to match the volume mountpoint
+    - "/data"
+    securityContext:
+      runAsUser: 0
+    volumeMounts:
+    - name: data
+      mountPath: /data
+  serviceAccount: volrecycler-sa
+  restartPolicy: Never
+  volumes:
+  - name: data
+    persistentVolumeClaim:
+      claimName: glustersupervol-testvol

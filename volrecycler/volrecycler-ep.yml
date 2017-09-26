@@ -1,0 +1,15 @@
+#-- Endpoint to describe the gluster cluster we're using
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: glusterfs-cluster
+  namespace: glusterfs
+subsets:
+- addresses:
+  # n15, n16, n17
+  - ip: 192.168.173.15
+  - ip: 192.168.173.16
+  - ip: 192.168.173.17
+  ports:
+  - port: 1
+    protocol: TCP

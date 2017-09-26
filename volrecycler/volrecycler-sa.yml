@@ -1,0 +1,27 @@
+#-- SA for the recycler
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: volrecycler-sa
+  namespace: glusterfs
+
+---
+
+#-- The SA just needs to be able to:
+#-- - list, modify PVs
+#-- - Something else because system:persistent-volume-provisioner
+#--   isn't working
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: volrecycler-provisioner
+  namespace: glusterfs
+subjects:
+- kind: ServiceAccount
+  name: volrecycler-sa
+  namespace: glusterfs
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  #name: system:persistent-volume-provisioner
+  apiGroup: rbac.authorization.k8s.io
