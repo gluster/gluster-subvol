@@ -43,7 +43,7 @@ metadata:
 spec:
   containers:
   - name: volrecycler
-    image: johnstrunk/volrecycler:latest
+    image: johnstrunk/gluster-subvol-volrecycler:latest
     imagePullPolicy: Always
     args:
     #-- This needs to match "servers" in the glusterfs endpoint for the
