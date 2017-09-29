@@ -37,31 +37,47 @@ spec:
 
 ---
 
-apiVersion: v1
-kind: Pod
+#-- apps/v1beta2 for k8s 1.8+
+apiVersion: apps/v1beta1
+kind: Deployment
 metadata:
   name: volrecycler-testvol
   namespace: glusterfs
 spec:
-  containers:
-  - name: volrecycler
-    image: johnstrunk/gluster-subvol-volrecycler:latest
-    imagePullPolicy: Always
-    args:
-    #-- This needs to match "servers" in the glusterfs endpoint for the
-    #-- supervol pv
-    - "192.168.173.15:192.168.173.16:192.168.173.17"
-    #-- This needs to match "path" in the supervol pv
-    - "testvol"
-    #-- This needs to match the volume mountpoint
-    - "/data"
-    securityContext:
-      runAsUser: 0
-    volumeMounts:
-    - name: data
-      mountPath: /data
-  serviceAccount: volrecycler-sa
-  volumes:
-  - name: data
-    persistentVolumeClaim:
-      claimName: glustersupervol-testvol
+  selector:
+    matchLabels:
+      gluster-subvol-recycler: testvol
+  #-- Replicas must be 1. We don't support multiple recyclers for the same
+  #-- supervolume
+  replicas: 1
+  strategy:
+    #-- On update, kill all the old then create the new
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        gluster-subvol-recycler: testvol
+      namespace: glusterfs
+    spec:
+      containers:
+      - name: volrecycler
+        image: johnstrunk/gluster-subvol-volrecycler:latest
+        imagePullPolicy: Always
+        args:
+        #-- This needs to match "servers" in the glusterfs endpoint for the
+        #-- supervol pv
+        - "192.168.173.15:192.168.173.16:192.168.173.17"
+        #-- This needs to match "path" in the supervol pv
+        - "testvol"
+        #-- This needs to match the volume mountpoint
+        - "/data"
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      serviceAccount: volrecycler-sa
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: glustersupervol-testvol
