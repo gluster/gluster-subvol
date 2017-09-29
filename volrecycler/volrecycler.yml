@@ -12,11 +12,13 @@ spec:
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: glustersupervol-testvol
   glusterfs:
     endpoints: glusterfs-cluster
     path: testvol
     readOnly: false
+  claimRef:
+    name: glustersupervol-testvol
+    namespace: glusterfs
 
 ---
 
@@ -31,7 +33,7 @@ spec:
   resources:
     requests:
       storage: 1Mi
-  storageClassName: glustersupervol-testvol
+  volumeName: glustersupervol-testvol
 
 ---
 
