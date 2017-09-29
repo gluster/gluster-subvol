@@ -40,7 +40,7 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: volrecycler
+  name: volrecycler-testvol
   namespace: glusterfs
 spec:
   containers:
@@ -61,7 +61,6 @@ spec:
     - name: data
       mountPath: /data
   serviceAccount: volrecycler-sa
-  restartPolicy: Never
   volumes:
   - name: data
     persistentVolumeClaim:
