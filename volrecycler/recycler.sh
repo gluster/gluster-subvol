@@ -29,13 +29,14 @@ function recycle_pv() {
     fi
 
     local scrub=$vol_root/$subdir
-    echo "= Working on $pv"
+    echo "= $(date) = Working on $pv"
     echo "  Scrubbing $scrub"
     test -e $scrub && rm -rf $scrub/..?* $scrub/.[!.]* $scrub/*  && test -z "$(ls -A $scrub)"
     if [ $? -ne 0 ]; then
-        echo Scrubbing failed. Not freeing pv
+        echo "  $(date) = Scrubbing failed. Not freeing pv... will retry later."
         return
     fi
+    echo "  $(date) = Scrubbing successful. Marking PV as available."
 
     # Mark it available
     kubectl $kc_args patch pv/$pv --type json -p'[{"op":"remove", "path":"/spec/claimRef"}, {"op":"replace", "path":"/status/phase", "value":"Available"}]'
