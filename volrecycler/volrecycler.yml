@@ -61,8 +61,7 @@ spec:
     spec:
       containers:
       - name: volrecycler
-        image: johnstrunk/gluster-subvol-volrecycler:latest
-        imagePullPolicy: Always
+        image: johnstrunk/gluster-subvol-volrecycler:v1.0
         args:
         #-- This needs to match "servers" in the glusterfs endpoint for the
         #-- supervol pv
