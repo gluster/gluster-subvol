@@ -65,9 +65,6 @@ are assured of getting exactly this PV attached to the recycler pod.
   This is accomplished by putting a `claimRef:` on the PV that refers to the PVC
   and a `volumeName:` on the PVC that refers to the PV.
 
-* The pod description needs to have `args:` set to refer to the IPs and volume
-name from the Endpoint and PersistentVolume.
-
 Once these changes are made, the pod can be started:
 ```sh
 kubectl apply -f volrecycler.yml

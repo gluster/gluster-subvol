@@ -2,7 +2,7 @@
 # vim: set ts=4 sw=4 et :
 
 function usage() {
-    echo "Usage: $0 <servers> <volume> <vol_root>"
+    echo "Usage: $0 <vol_root>"
 }
 
 sa_dir=/var/run/secrets/kubernetes.io/serviceaccount
@@ -44,8 +44,7 @@ function recycle_pv() {
 
 function recycle_all() {
     pvs=$(kubectl $kc_args get pv \
-        -l cluster=$servers \
-        -l volume=$volume_name \
+        -l supervol=$uuid \
         -ojsonpath='{range .items[*]}{.metadata.name} {.status.phase}{"\n"}{end}' \
         | grep Released | cut -f1 -d' ')
     for pv in $pvs; do
@@ -53,11 +52,17 @@ function recycle_all() {
     done
 }
 
-servers=$1
-volume_name=$2
-vol_root=$3
+vol_root=$1
 
-if [ $# -ne 3 ]; then usage; exit 1; fi
+if [ $# -ne 1 ]; then usage; exit 1; fi
+
+if [ ! -f $vol_root/supervol-uuid ]; then
+    echo "Unable to read UUID from volume ($vol_root/supervol-uuid)"
+    exit 1;
+fi
+uuid=$(cat $vol_root/supervol-uuid)
+
+echo "Recycling for supervol: $uuid"
 
 while [ true ]; do
     recycle_all

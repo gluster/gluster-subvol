@@ -8,6 +8,9 @@ RUN yum install -y \
     rm -rf /var/cache/yum
 
 COPY volrecycler/recycler.sh /
-RUN chmod 755 /recycler.sh
+COPY volrecycler/locker.sh /
 
-ENTRYPOINT [ "/recycler.sh" ]
+RUN chmod 755 /recycler.sh && \
+    chmod 755 /locker.sh
+
+ENTRYPOINT [ "/locker.sh" ]

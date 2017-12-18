@@ -17,8 +17,9 @@ function mkPvTemplate() {
     local volume=$2
     local subdir=$3
     local capacity=$4
+    local uuid=$5
 
-    local pv_name=$(echo "${servers}-${volume}-${subdir}" | tr ':/' '-')
+    local pv_name=$(echo "${uuid}-${subdir}" | tr '/' '-')
     cat - << EOT
 ---
 apiVersion: v1
@@ -29,13 +30,13 @@ metadata:
     cluster: "$(echo $servers | tr ':' '-')"
     volume: "$volume"
     subdir: "$(echo $subdir | tr '/' '-')"
+    supervol: "$uuid"
 spec:
   capacity:
     storage: $capacity
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
-#  storageClassName: $storage_class
   flexVolume:
     driver: "rht/glfs-subvol"
     options:
@@ -74,6 +75,11 @@ if [ $? != 0 ]; then
     echo "Failed setting df space reporting volume option... continuing anyway."
 fi
 
+if [ ! -f $base_path/supervol-uuid ]; then
+    uuidgen -r > $base_path/supervol-uuid
+fi
+supervol_uuid=$(cat $base_path/supervol-uuid)
+
 rm $base_path/pvs-$i_start-$i_end.yml
 while [ $i -le $i_end ]; do
     subdir="$(tohexpath $i)"
@@ -89,7 +95,7 @@ while [ $i -le $i_end ]; do
         echo "Unable to set permissions on $dir"
         exit 2
     fi
-    mkPvTemplate $servers $volume_name $subdir "${volsize_gb}Gi" >> $base_path/pvs-$i_start-$i_end.yml
+    mkPvTemplate $servers $volume_name $subdir "${volsize_gb}Gi" $supervol_uuid >> $base_path/pvs-$i_start-$i_end.yml
     gluster volume quota $volume_name limit-usage /$subdir ${volsize_gb}GB
     if [ $? != 0 ]; then
         echo -n "Unable to set gluster quota. "
