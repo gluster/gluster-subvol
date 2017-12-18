@@ -1,7 +1,4 @@
 #-- A PV for the big volume we're managing w/ this recycler instance
-# We're overloading the sc name here to ensure a 1:1 binding, but I think
-# there's a way to directly specify the PV name, but I have yet to get
-# that to work.
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -63,11 +60,6 @@ spec:
       - name: volrecycler
         image: johnstrunk/gluster-subvol-volrecycler:v1.0
         args:
-        #-- This needs to match "servers" in the glusterfs endpoint for the
-        #-- supervol pv
-        - "192.168.173.15:192.168.173.16:192.168.173.17"
-        #-- This needs to match "path" in the supervol pv
-        - "testvol"
         #-- This needs to match the volume mountpoint
         - "/data"
         securityContext:
