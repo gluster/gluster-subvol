@@ -58,7 +58,7 @@ spec:
     spec:
       containers:
       - name: volrecycler
-        image: johnstrunk/gluster-subvol-volrecycler:v1.0
+        image: johnstrunk/gluster-subvol-volrecycler:v1.1
         args:
         #-- This needs to match the volume mountpoint
         - "/data"
