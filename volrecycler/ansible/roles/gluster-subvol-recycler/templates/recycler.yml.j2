@@ -1,0 +1,77 @@
+---
+
+#-- A PV for the big volume we're managing w/ this recycler instance
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: supervol-{{ gluster_subvol_recycler.supervol_name }}
+spec:
+  capacity:
+    storage: 1Mi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  glusterfs:
+    endpoints: {{ gluster_subvol_recycler.gluster_endpoint }}
+    path: {{ gluster_subvol_recycler.supervol_name }}
+    readOnly: false
+  claimRef:
+    name: supervol-{{ gluster_subvol_recycler.supervol_name }}
+    namespace: {{ gluster_subvol_recycler.namespace }}
+
+---
+
+#-- A PVC to match the PV
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: supervol-{{ gluster_subvol_recycler.supervol_name }}
+  namespace: {{ gluster_subvol_recycler.namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Mi
+  volumeName: supervol-{{ gluster_subvol_recycler.supervol_name }}
+
+---
+
+#-- apps/v1beta2 for k8s 1.8+
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: volrecycler-{{ gluster_subvol_recycler.supervol_name }}
+  namespace: {{ gluster_subvol_recycler.namespace }}
+spec:
+  selector:
+    matchLabels:
+      gluster-subvol-recycler: {{ gluster_subvol_recycler.supervol_name }}
+  #-- Replicas must be 1. We don't support multiple recyclers for the same
+  #-- supervolume
+  replicas: 1
+  strategy:
+    #-- On update, kill all the old then create the new
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        gluster-subvol-recycler: {{ gluster_subvol_recycler.supervol_name }}
+      namespace: {{ gluster_subvol_recycler.namespace }}
+    spec:
+      containers:
+      - name: volrecycler
+        image: {{ gluster_subvol_recycler.image }}
+        imagePullPolicy: Always
+        args:
+        - "/data"
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      serviceAccount: {{ gluster_subvol_recycler.service_acct }}
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: supervol-{{ gluster_subvol_recycler.supervol_name }}

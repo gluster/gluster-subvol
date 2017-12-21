@@ -1,0 +1,24 @@
+# vim: set ts=2 sw=2 et :
+---
+
+- name: Create temp directory
+  command: mktemp -d /tmp/subvol-recycler-XXXXXX
+  register: mktemp
+  changed_when: false
+
+- set_fact:
+    tempdir: "{{ mktemp.stdout }}"
+
+- template:
+    src: namespace.yml.j2
+    dest: "{{ tempdir }}/namespace.yml"
+  changed_when: false
+
+- name: Create namespace for recycler
+  command: "kubectl apply -f {{ tempdir }}/namespace.yml"
+
+- name: Remove temp directory
+  file:
+    name: "{{ tempdir }}"
+    state: absent
+  changed_when: false

@@ -1,0 +1,64 @@
+# vim: set ts=2 sw=2 et :
+---
+
+##############################
+# This playbook installs the gluster-subvol recycler.
+#
+# Configuring the recycler
+# The recycler role is controlled by the gluster_subvol_recycler dictionary.
+# gluster_subvol_recycler:
+#   supervol_name: <name of the supervol>
+#   gluster_endpoint: <kube ep name for the gluster cluster>
+#   gluster_endpoint_ips: <list of IPs for the Gluster servers>  (O)
+#   namespace: <kube namespace to run in>
+#   service_acct: <kube service account to use>
+#   create_sa: true | false                                      (O)
+#   enable_anyuid: true | false                                  (O)
+#   image: <container image for the recycler>
+#
+# Entries marked w/ (O) are optional...
+#   create_sa: If true, it will create the service account, service_acct,
+#     with sufficient privileges. Defaults to false.
+#   enable_anyuid: If true, when creating the service account, add the scc
+#     to allow it to run pods as uid 0. (assumes presence of oc command and
+#     only has an effect if create_sa==true)
+#   gluster_endpoint_ips: If provided, it will create the endpoint named
+#     by gluster_endpoint, using the provided host list
+
+- name: Install gluster-subvol recycler
+  hosts: master
+  become: false
+  tasks:
+  - include_role:
+      name: gluster-subvol-recycler
+    vars:
+      gluster_subvol_recycler:
+        namespace: glusterns
+        gluster_endpoint: mycluster
+        gluster_endpoint_ips:
+        - 192.168.121.44
+        - 192.168.121.69
+        - 192.168.121.35
+        service_acct: recycler-sa
+        create_sa: true
+        enable_anyuid: false
+
+  - include_role:
+      name: gluster-subvol-recycler
+    vars:
+      gluster_subvol_recycler:
+        supervol_name: supervol00
+        gluster_endpoint: mycluster
+        namespace: glusterns
+        service_acct: recycler-sa
+        image: johnstrunk/gluster-subvol-volrecycler:latest
+
+  - include_role:
+      name: gluster-subvol-recycler
+    vars:
+      gluster_subvol_recycler:
+        supervol_name: supervol01
+        gluster_endpoint: mycluster
+        namespace: glusterns
+        service_acct: recycler-sa
+        image: johnstrunk/gluster-subvol-volrecycler:latest

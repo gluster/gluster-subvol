@@ -1,0 +1,33 @@
+# vim: set ts=2 sw=2 et :
+---
+
+- name: Validate role variables
+  assert:
+    that:
+    - "gluster_subvol_recycler is defined"
+    - "gluster_subvol_recycler.namespace is defined"
+
+- name: Evaluate operations to perform
+  set_fact:
+    create_sa: "{{ gluster_subvol_recycler.create_sa | default(false) | bool
+                   and
+                   gluster_subvol_recycler.service_acct is defined }}"
+    create_ep: "{{ gluster_subvol_recycler.gluster_endpoint is defined
+                   and
+                   gluster_subvol_recycler.gluster_endpoint_ips is defined }}"
+    create_recycler: "{{ gluster_subvol_recycler.supervol_name is defined
+                         and
+                         gluster_subvol_recycler.gluster_endpoint is defined
+                         and
+                         gluster_subvol_recycler.service_acct is defined
+                         and
+                         gluster_subvol_recycler.image is defined }}"
+
+- include_tasks: create-sa.yml
+  when: create_sa
+
+- include_tasks: create-ep.yml
+  when: create_ep
+
+- include_tasks: create-recycler.yml
+  when: create_recycler

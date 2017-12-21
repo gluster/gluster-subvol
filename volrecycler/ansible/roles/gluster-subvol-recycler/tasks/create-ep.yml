@@ -1,0 +1,26 @@
+# vim: set ts=2 sw=2 et :
+---
+
+- include_tasks: create-ns.yml
+
+- name: Create temp directory
+  command: mktemp -d /tmp/subvol-recycler-XXXXXX
+  register: mktemp
+  changed_when: false
+
+- set_fact:
+    tempdir: "{{ mktemp.stdout }}"
+
+- template:
+    src: endpoint.yml.j2
+    dest: "{{ tempdir }}/endpoint.yml"
+  changed_when: false
+
+- name: Create service/endpoint for recycler
+  command: "kubectl apply -f {{ tempdir }}/endpoint.yml"
+
+- name: Remove temp directory
+  file:
+    name: "{{ tempdir }}"
+    state: absent
+  changed_when: false

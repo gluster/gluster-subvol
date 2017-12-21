@@ -1,0 +1,31 @@
+# vim: set ts=2 sw=2 et :
+---
+
+- include_tasks: create-ns.yml
+
+- name: Create temp directory
+  command: mktemp -d /tmp/subvol-recycler-XXXXXX
+  register: mktemp
+  changed_when: false
+
+- set_fact:
+    tempdir: "{{ mktemp.stdout }}"
+
+- template:
+    src: serviceaccount.yml.j2
+    dest: "{{ tempdir }}/serviceaccount.yml"
+  changed_when: false
+
+- name: Create service account for recycler
+  command: "kubectl apply -f {{ tempdir }}/serviceaccount.yml"
+
+- name: Remove temp directory
+  file:
+    name: "{{ tempdir }}"
+    state: absent
+  changed_when: false
+
+- name: Grant anyuid to service account
+  command: "oc adm policy add-scc-to-user anyuid
+            system:serviceaccount:{{ gluster_subvol_recycler.namespace }}:{{ gluster_subvol_recycler.service_acct }}"
+  when: gluster_subvol_recycler.enable_anyuid | default(false)
