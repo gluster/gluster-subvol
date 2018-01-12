@@ -37,6 +37,7 @@ spec:
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
+  storageClassName: gluster-subvol
   flexVolume:
     driver: "rht/glfs-subvol"
     options:
