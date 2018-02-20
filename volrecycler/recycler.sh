@@ -24,8 +24,10 @@ kc_args="--server=https://kubernetes.default.svc.cluster.local --token=$(cat $sa
 
 function recycle_pv() {
     local pv=$1
-    local subdir=$(kubectl $kc_args get pv/$pv \
+    local subdir
+    subdir=$(kubectl "$kc_args" get "pv/$pv" \
         -ojsonpath='{.spec.flexVolume.options.dir}')
+    # shellcheck disable=SC2181
     if [ $? -ne 0 ]; then
         echo "Failed parsing PV $pv"
         return
@@ -36,7 +38,7 @@ function recycle_pv() {
         return
     fi
     # make sure subdir doesn't contain ..
-    echo $subdir | grep -q '\.\.'
+    echo "$subdir" | grep -q '\.\.'
     if [ $? -ne 1 ]; then
         echo "Found .. in subdir for $pv"
         return
@@ -45,7 +47,9 @@ function recycle_pv() {
     local scrub=$vol_root/$subdir
     echo "= $(date) = Working on $pv"
     echo "  Scrubbing $scrub"
-    test -e $scrub && rm -rf $scrub/..?* $scrub/.[!.]* $scrub/*  && test -z "$(ls -A $scrub)"
+    # shellcheck disable=SC2115
+    test -e "$scrub" && rm -rf "$scrub"/..?* "$scrub"/.[!.]* "$scrub"/*  && test -z "$(ls -A "$scrub")"
+    # shellcheck disable=SC2181
     if [ $? -ne 0 ]; then
         echo "  $(date) = Scrubbing failed. Not freeing pv... will retry later."
         return
@@ -53,16 +57,16 @@ function recycle_pv() {
     echo "  $(date) = Scrubbing successful. Marking PV as available."
 
     # Mark it available
-    kubectl $kc_args patch pv/$pv --type json -p'[{"op":"remove", "path":"/spec/claimRef"}, {"op":"replace", "path":"/status/phase", "value":"Available"}]'
+    kubectl "$kc_args" patch "pv/$pv" --type json -p'[{"op":"remove", "path":"/spec/claimRef"}, {"op":"replace", "path":"/status/phase", "value":"Available"}]'
 }
 
 function recycle_all() {
-    pvs=$(kubectl $kc_args get pv \
-        -l supervol=$uuid \
+    pvs=$(kubectl "$kc_args" get pv \
+        -l supervol="$uuid" \
         -ojsonpath='{range .items[*]}{.metadata.name} {.status.phase}{"\n"}{end}' \
         | grep Released | cut -f1 -d' ')
     for pv in $pvs; do
-        recycle_pv $pv
+        recycle_pv "$pv"
     done
 }
 
@@ -70,15 +74,15 @@ vol_root=$1
 
 if [ $# -ne 1 ]; then usage; exit 1; fi
 
-if [ ! -f $vol_root/supervol-uuid ]; then
+if [ ! -f "$vol_root/supervol-uuid" ]; then
     echo "Unable to read UUID from volume ($vol_root/supervol-uuid)"
     exit 1;
 fi
-uuid=$(cat $vol_root/supervol-uuid)
+uuid=$(cat "$vol_root/supervol-uuid")
 
 echo "Recycling for supervol: $uuid"
 
-while [ true ]; do
+while true; do
     recycle_all
     sleep 10
 done
