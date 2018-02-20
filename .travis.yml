@@ -1,0 +1,13 @@
+---
+# copied from: https://github.com/koalaman/shellcheck#travis-ci-setup
+
+language: bash
+addons:
+  apt:
+    sources:
+    - debian-sid
+    packages:
+    - shellcheck
+script:
+- find . -name '*.sh' -print0 | xargs -0 -n1 shellcheck
+- shellcheck glfs-subvol/glfs-subvol

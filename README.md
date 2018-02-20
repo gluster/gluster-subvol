@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/gluster/gluster-subvol.svg?branch=master)](https://travis-ci.org/gluster/gluster-subvol)
+
 # Overview
 
 This repo contains files necessary to use subdirectories of Gluster volumes as
