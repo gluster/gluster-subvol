@@ -48,9 +48,7 @@ function recycle_pv() {
     echo "= $(date) = Working on $pv"
     echo "  Scrubbing $scrub"
     # shellcheck disable=SC2115
-    test -e "$scrub" && rm -rf "$scrub"/..?* "$scrub"/.[!.]* "$scrub"/*  && test -z "$(ls -A "$scrub")"
-    # shellcheck disable=SC2181
-    if [ $? -ne 0 ]; then
+    if test -e "$scrub" && rm -rf "$scrub"/..?* "$scrub"/.[!.]* "$scrub"/*  && test -z "$(ls -A "$scrub")"; then
         echo "  $(date) = Scrubbing failed. Not freeing pv... will retry later."
         return
     fi
