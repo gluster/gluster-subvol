@@ -22,4 +22,4 @@
 f=/data/supervol-uuid
 
 echo Acquiring lock on $f
-flock -x -n -E99 $f /recycler.sh $*
+flock -x -n -E99 $f /recycler.sh "$@"
