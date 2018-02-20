@@ -26,9 +26,9 @@ TIME=$(date +%s.%N)
 RC_OK=0
 RC_FAIL=1
 
-cd "$(dirname $0)"
+cd "$(dirname "$0")" || exit 2
 scriptdir="$PWD"
-cd "$OLDPWD"
+cd "$OLDPWD" || exit 2
 MOUNTPATH=${scriptdir}/mnt
 LOCKPATH=/var/lock/glfs-subvol
 
@@ -42,7 +42,7 @@ function log() {
 #-- Log a command, then execute it
 function execute() {
     log "! $*"
-    $*
+    "$@"
 }
 
 #-- Return the result of the operation
@@ -51,15 +51,15 @@ function retResult() {
     local result="$2"
     log "< $rc $result"
     echo "$result"
-    exit $rc
+    exit "$rc"
 }
 
 function doInit() {
     local result
     local msg=""
-    mkdir -p $MOUNTPATH >& /dev/null || \
+    mkdir -p "$MOUNTPATH" >& /dev/null || \
         msg="${msg} Unable to create ${MOUNTPATH}"
-    mkdir -p $LOCKPATH >& /dev/null || \
+    mkdir -p "$LOCKPATH" >& /dev/null || \
         msg="${msg} Unable to create ${LOCKPATH}"
     if [[ "x$msg" != "x" ]] ; then
         result="{\"status\": \"Failure\", \"message\": \"${msg}\"}"
@@ -84,20 +84,26 @@ function doMount() {
     local mountdir="$1"
     local json="$2"
 
-    local cluster=$(echo $2 | $JQ -r '.cluster')
-    local volume=$(echo "$json" | $JQ -r '.volume')
-    local subdir=$(echo "$json" | $JQ -r '.dir')
+    local cluster
+    cluster=$(echo "$2" | $JQ -r '.cluster')
+    local volume
+    volume=$(echo "$json" | $JQ -r '.volume')
+    local subdir
+    subdir=$(echo "$json" | $JQ -r '.dir')
 
     # cluster is "server1:server2:..."
     # Take the 1st as volserver and rest as backups
-    local volserver=$(echo $cluster | sed -r 's/^([^:]+):?(.*)/\1/')
-    local backupservers=$(echo $cluster | sed -r 's/^([^:]+):?(.*)/\2/')
+    local volserver
+    volserver=$(echo "$cluster" | sed -r 's/^([^:]+):?(.*)/\1/')
+    local backupservers
+    backupservers=$(echo "$cluster" | sed -r 's/^([^:]+):?(.*)/\2/')
 
-    local mntsuffix=$(mountName $volserver $volume $subdir)
+    local mntsuffix
+    mntsuffix=$(mountName "$volserver" "$volume" "$subdir")
     local mountname=${MOUNTPATH}/${mntsuffix}
 
-    log volserver $volserver
-    log backupservers $backupservers
+    log volserver "$volserver"
+    log backupservers "$backupservers"
 
     local msg="volserver=$volserver backup=$backupservers volume=$volume mountpoint=$mountname bindto=$mountdir"
 
@@ -109,25 +115,23 @@ function doMount() {
     log "Using lockfile: $lockfile"
     ( flock 9 || exit 99
         # if main vol not mounted, we need to mount it
-        mountpoint -q $mountname
-        if [[ $? != 0 ]]; then
-            mkdir -p $mountname
-            execute mount -t glusterfs -o backup-volfile-servers=${backupservers} ${volserver}:/${volume} ${mountname}
+        if mountpoint -q "$mountname"; then
+            mkdir -p "$mountname"
+            execute mount -t glusterfs -o "backup-volfile-servers=${backupservers}" "${volserver}:/${volume}" "${mountname}"
         fi
         # bind must also be protected to ensure nobody unmounts before we
         # can bind
-        if [[ $? == 0 ]]; then
-            execute mount --bind ${mountname}/${subdir} ${mountdir}
+        if ! mountpoint -q "$mountname"; then
+            execute mount --bind "${mountname}/${subdir}" "${mountdir}"
         fi
         # force unlock due to fork of mount process
         flock -u -n 9
-    ) 9>> ${lockfile}
+    ) 9>> "${lockfile}"
     if [[ $? == 99 ]]; then
         log "flock of $lockfile failed."
     fi
 
-    mountpoint -q ${mountdir}
-    if [[ $? == 0 ]]; then
+    if ! mountpoint -q "${mountdir}"; then
         local result="{\"status\": \"Success\", \"message\": \"$msg\"}"
         retResult $RC_OK "$result"
     else
@@ -141,26 +145,27 @@ function doUnmount() {
     local mountdir=$1
     local msg="Unmounting from ${mountdir}"
 
-    mountpoint -q ${mountdir}
-    if [[ $? != 0 ]]; then
+    if mountpoint -q "${mountdir}"; then
         result="{\"status\": \"Success\", \"message\": \"Was not mounted.\"}"
         retResult $RC_OK "$result"
     fi
 
     # The actual gluster mount (device portion)
-    local gdevice=$(grep "$mountdir" /proc/mounts | awk '{ print $1 }')
+    local gdevice
+    gdevice=$(grep "$mountdir" /proc/mounts | awk '{ print $1 }')
     # The directory holding the main volume mountpoint
-    local gdevicedir=$(grep "$gdevice" /proc/mounts | grep "$MOUNTPATH" | awk '{ print $2 }')
+    local gdevicedir
+    gdevicedir=$(grep "$gdevice" /proc/mounts | grep "$MOUNTPATH" | awk '{ print $2 }')
     # The mount-specific suffix of the path... to match mntsuffix in doMount()
-    local mntsuffix=$(echo "$gdevicedir" | sed -r "s_${MOUNTPATH}/__")
+    local mntsuffix
+    mntsuffix=$(echo "$gdevicedir" | sed -r "s_${MOUNTPATH}/__")
     log "gdevice=$gdevice"
     log "gdevicedir=$gdevicedir"
     log "mntsuffix=$mntsuffix"
 
     local result=""
     local rc=""
-    execute umount ${mountdir}
-    if [[ $? == 0 ]]; then
+    if ! execute umount "${mountdir}"; then
         result="{\"status\": \"Success\", \"message\": \"$msg\"}"
         rc=$RC_OK
     else
@@ -174,17 +179,18 @@ function doUnmount() {
     local lockfile="${LOCKPATH}/${mntsuffix}.lock"
     log "Using lockfile: $lockfile"
     ( flock 9 || exit 99
-        local mcount=$(grep $gdevice /proc/mounts | wc -l)
+        local mcount
+        mcount=$(grep -c "$gdevice" /proc/mounts)
         log "$gdevice is mounted $mcount times"
         if [[ $mcount -eq 1 ]]; then
             # We were the last, only the main one remains
             log "We were last user of $gdevice; unmounting it."
-            execute umount $gdevicedir
-            execute rmdir $gdevicedir
+            execute umount "$gdevicedir"
+            execute rmdir "$gdevicedir"
             # Unfortunately, we need to leave the .lock file or we lose
             # protection
         fi
-    ) 9>> ${lockfile}
+    ) 9>> "${lockfile}"
     if [[ $? == 99 ]]; then
         log "flock of $lockfile failed."
     fi
@@ -195,14 +201,15 @@ function doUnmount() {
 
 #-- make sure jq is installed
 JQ=$(which jq 2> /dev/null || echo "$scriptdir/jq")
-if [[ $? -ne 0 || ! -x ${JQ} ]]; then
+if [[ ! -x ${JQ} ]]; then
     rStatus=$S_FAILURE
     rMessage="Unable to find 'jq' in PATH. Please install jq."
     retResult
 fi
-which flock >& /dev/null
-if [[ $? -ne 0 ]]; then
+if which flock >& /dev/null; then
+    # shellcheck disable=SC2034
     rStatus=$S_FAILURE
+    # shellcheck disable=SC2034
     rMessage="Unable to find 'flock' in PATH. Please install flock."
     retResult
 fi
@@ -212,13 +219,13 @@ cmd=$1
 shift
 case $cmd in
 init)
-    doInit $*
+    doInit "$@"
     ;;
 mount)
-    doMount $*
+    doMount "$@"
     ;;
 unmount)
-    doUnmount $*
+    doUnmount "$@"
     ;;
 *)
     result="{\"status\": \"Not supported\", \"message\": \"$cmd is not supported\"}"
