@@ -115,13 +115,13 @@ function doMount() {
     log "Using lockfile: $lockfile"
     ( flock 9 || exit 99
         # if main vol not mounted, we need to mount it
-        if mountpoint -q "$mountname"; then
+        if ! mountpoint -q "$mountname"; then
             mkdir -p "$mountname"
             execute mount -t glusterfs -o "backup-volfile-servers=${backupservers}" "${volserver}:/${volume}" "${mountname}"
         fi
         # bind must also be protected to ensure nobody unmounts before we
         # can bind
-        if ! mountpoint -q "$mountname"; then
+        if mountpoint -q "$mountname"; then
             execute mount --bind "${mountname}/${subdir}" "${mountdir}"
         fi
         # force unlock due to fork of mount process
@@ -131,7 +131,7 @@ function doMount() {
         log "flock of $lockfile failed."
     fi
 
-    if ! mountpoint -q "${mountdir}"; then
+    if mountpoint -q "${mountdir}"; then
         local result="{\"status\": \"Success\", \"message\": \"$msg\"}"
         retResult $RC_OK "$result"
     else
@@ -145,7 +145,7 @@ function doUnmount() {
     local mountdir=$1
     local msg="Unmounting from ${mountdir}"
 
-    if mountpoint -q "${mountdir}"; then
+    if ! mountpoint -q "${mountdir}"; then
         result="{\"status\": \"Success\", \"message\": \"Was not mounted.\"}"
         retResult $RC_OK "$result"
     fi
@@ -165,7 +165,7 @@ function doUnmount() {
 
     local result=""
     local rc=""
-    if ! execute umount "${mountdir}"; then
+    if execute umount "${mountdir}"; then
         result="{\"status\": \"Success\", \"message\": \"$msg\"}"
         rc=$RC_OK
     else
@@ -202,16 +202,12 @@ function doUnmount() {
 #-- make sure jq is installed
 JQ=$(which jq 2> /dev/null || echo "$scriptdir/jq")
 if [[ ! -x ${JQ} ]]; then
-    rStatus=$S_FAILURE
     rMessage="Unable to find 'jq' in PATH. Please install jq."
-    retResult
+    retResult $RC_FAIL "$rMessage"
 fi
-if which flock >& /dev/null; then
-    # shellcheck disable=SC2034
-    rStatus=$S_FAILURE
-    # shellcheck disable=SC2034
+if ! which flock >& /dev/null; then
     rMessage="Unable to find 'flock' in PATH. Please install flock."
-    retResult
+    retResult $RC_FAIL "$rMessage"
 fi
 
 log "> $*"

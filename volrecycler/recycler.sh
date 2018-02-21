@@ -25,7 +25,8 @@ kc_args="--server=https://kubernetes.default.svc.cluster.local --token=$(cat $sa
 function recycle_pv() {
     local pv=$1
     local subdir
-    subdir=$(kubectl "$kc_args" get "pv/$pv" \
+    # shellcheck disable=SC2086
+    subdir=$(kubectl $kc_args get "pv/$pv" \
         -ojsonpath='{.spec.flexVolume.options.dir}')
     # shellcheck disable=SC2181
     if [ $? -ne 0 ]; then
@@ -48,18 +49,22 @@ function recycle_pv() {
     echo "= $(date) = Working on $pv"
     echo "  Scrubbing $scrub"
     # shellcheck disable=SC2115
-    if test -e "$scrub" && rm -rf "$scrub"/..?* "$scrub"/.[!.]* "$scrub"/*  && test -z "$(ls -A "$scrub")"; then
+    test -e "$scrub" && rm -rf "$scrub"/..?* "$scrub"/.[!.]* "$scrub"/*  && test -z "$(ls -A "$scrub")"
+    # shellcheck disable=SC2181
+    if [ $? -ne 0 ]; then
         echo "  $(date) = Scrubbing failed. Not freeing pv... will retry later."
         return
     fi
     echo "  $(date) = Scrubbing successful. Marking PV as available."
 
     # Mark it available
-    kubectl "$kc_args" patch "pv/$pv" --type json -p'[{"op":"remove", "path":"/spec/claimRef"}, {"op":"replace", "path":"/status/phase", "value":"Available"}]'
+    # shellcheck disable=SC2086
+    kubectl $kc_args patch "pv/$pv" --type json -p'[{"op":"remove", "path":"/spec/claimRef"}, {"op":"replace", "path":"/status/phase", "value":"Available"}]'
 }
 
 function recycle_all() {
-    pvs=$(kubectl "$kc_args" get pv \
+    # shellcheck disable=SC2086
+    pvs=$(kubectl $kc_args get pv \
         -l supervol="$uuid" \
         -ojsonpath='{range .items[*]}{.metadata.name} {.status.phase}{"\n"}{end}' \
         | grep Released | cut -f1 -d' ')
