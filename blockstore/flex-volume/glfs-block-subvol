@@ -21,10 +21,11 @@
 # if DEBUG, log everything to a file as we do it
 if [ ! -n "${DEBUG}" ]; then
     DEBUG=1
+# if DEBUG is 2 output all commands (verbose debug mode)
 elif [ "${DEBUG}" == 2 ]; then
     set -x
 fi
-DEBUGFILE='/tmp/glfs-block-subdir.out'
+DEBUGFILE='/tmp/glfs-block-subvol.out'
 TIME=$(date +%s.%N)
 
 RC_OK=0
@@ -176,6 +177,16 @@ function doUnmount() {
     fi
 
     # The actual gluster mount (device portion)
+    # NOTE: losetup usage
+    #  Given a mount point, /proc/mounts will list the loop device.
+    #  To go from the loop device to the gluster mount, we need to determine
+    #  the backing path for the device mounted as the loop device.
+    #  'mount' command does this by peeking into,
+    #   - /sys/dev/block/<MAJOR>:<MINOR>/loop/backing_file
+    #  losetup does the same as mount, and gives extra control based on the
+    #  loop device. Hence losetup is used to determine the backing file and
+    #  from there the gdevicedir and the mntsuffix.
+    #  losetup comes from the util-linux package (like mount and flock)
     local ldevice
     ldevice=$(grep "$mountdir" /proc/mounts | awk '{ print $1 }')
     local ldevicefile
@@ -227,15 +238,17 @@ function doUnmount() {
 
 
 #-- make sure jq is installed
-JQ=$(which jq 2> /dev/null || echo "$scriptdir/jq")
+JQ=$(which jq 2> /dev/null)
 if [[ ! -x ${JQ} ]]; then
     rMessage="Unable to find 'jq' in PATH. Please install jq."
     retResult $RC_FAIL "$rMessage"
 fi
-if ! which flock >& /dev/null; then
+if ! rpm -q util-linux >& /dev/null; then
+    rMessage="Package util-linux is not installed. Please install util-linux package."
     rMessage="Unable to find 'flock' in PATH. Please install flock."
     retResult $RC_FAIL "$rMessage"
 fi
+# TODO: PATH check for which and losetup(?)
 
 log "> $*"
 cmd=$1

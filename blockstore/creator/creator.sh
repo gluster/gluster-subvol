@@ -133,7 +133,7 @@ while [ "$i" -le "$i_end" ]; do
         exit 2
     fi
     # Create a sparse file of required volume size
-    # 2048 = 1024 * 1024 * 1024 (GB to bytes) / 512 (obs in dd)
+    # 2097152 = 1024 * 1024 * 1024 (GB to bytes) / 512 (obs in dd)
     seek_end=$((volsize_gb*2097152))
     if [ $? -eq 3 ]; then
         echo "Arithmetic error in expr, unable to setup ${blockfile}"
