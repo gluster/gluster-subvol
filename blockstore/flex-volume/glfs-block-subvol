@@ -19,12 +19,7 @@
 # https://github.com/kubernetes/community/blob/master/contributors/devel/flexvolume.md
 
 # if DEBUG, log everything to a file as we do it
-if [ ! -n "${DEBUG}" ]; then
-    DEBUG=1
-# if DEBUG is 2 output all commands (verbose debug mode)
-elif [ "${DEBUG}" == 2 ]; then
-    set -x
-fi
+DEBUG=1
 DEBUGFILE='/tmp/glfs-block-subvol.out'
 TIME=$(date +%s.%N)
 
@@ -145,9 +140,9 @@ function doMount() {
             mkdir -p "$mountname"
             execute mount -t glusterfs -o "backup-volfile-servers=${backupservers}" "${volserver}:/${volume}" "${mountname}"
         fi
-        # bind must also be protected to ensure nobody unmounts before we
-        # can bind
         if mountpoint -q "$mountname"; then
+            # Protect loop mount as well within the lock, to ensure gluster
+            # volume is not unmounted before this is complete
             execute mount "${mountname}/${subdir}/${blockfile}" "${mountdir}" -t xfs -o loop,discard
         fi
         # force unlock due to fork of mount process
@@ -190,11 +185,12 @@ function doUnmount() {
     local ldevice
     ldevice=$(grep "$mountdir" /proc/mounts | awk '{ print $1 }')
     local ldevicefile
-    ldevicefile=$(losetup -n -O BACK-FILE "${ldevice}")
+    ldevicefile=$(losetup -l "${ldevice}" -O NAME,BACK-FILE | grep "${ldevice}" | awk '{print $2}')
     local gdevicedir
     gdevicedir=$(echo "$ldevicefile" | grep -oE "${MOUNTPATH}/[^\/]*")
     local mntsuffix
     mntsuffix=$(echo "$gdevicedir" | sed -r "s#${MOUNTPATH}/##")
+    log "ldevice=$ldevice"
     log "ldevicefile=$ldevicefile"
     log "gdevicedir=$gdevicedir"
     log "mntsuffix=$mntsuffix"
@@ -243,9 +239,9 @@ if [[ ! -x ${JQ} ]]; then
     rMessage="Unable to find 'jq' in PATH. Please install jq."
     retResult $RC_FAIL "$rMessage"
 fi
+# TODO: remove rpm check and check for commands instead
 if ! rpm -q util-linux >& /dev/null; then
     rMessage="Package util-linux is not installed. Please install util-linux package."
-    rMessage="Unable to find 'flock' in PATH. Please install flock."
     retResult $RC_FAIL "$rMessage"
 fi
 # TODO: PATH check for which and losetup(?)

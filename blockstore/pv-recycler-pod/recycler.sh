@@ -31,19 +31,8 @@ function create_blockdevice() {
         echo "Unable to create file ${blockfile}"
         return 2
     fi
-    if ! chmod 777 "$blockfqpath"; then
-        echo "Unable to set permissions on ${blockfile}"
-        return 2
-    fi
     # Create a sparse file of required volume size
-    # 2097152 = 1024 * 1024 * 1024 (GB to bytes) / 512 (obs in dd)
-    local seek_end
-    seek_end=$((volsize_gb*2097152))
-    if [ $? -eq 3 ]; then
-        echo "Arithmetic error in expr, unable to setup ${blockfile}"
-        return 2
-    fi
-    if ! dd seek="${seek_end}" obs=512 ibs=512 count=1 if=/dev/null of="${blockfqpath}" status=none ; then
+    if ! dd bs=1 count=1 if=/dev/zero of="${blockfqpath}" seek="$((volsize_gb * 1024 * 1024 *1024))" status=none; then
         echo "Error in dd to ${blockfile}"
         return 2
     fi
@@ -98,6 +87,7 @@ function recycle_pv() {
         echo "Failed parsing PV $pv (unable to get backing file capacity)"
         return
     fi
+    # TODO: Current assumption is capacity is always in Gi units
     capacity=$(echo "$capacity_str" | sed -r "s/Gi//")
     if [ "x$capacity" == "x" ]; then
         echo "Couldn't determine capacity for file $blockfile in $pv with subdir $subdir"
@@ -107,8 +97,7 @@ function recycle_pv() {
     local scrub="${vol_root}/${subdir}/${blockfile}"
     echo "= $(date) = Working on ${pv}"
     echo "  Scrubbing $scrub"
-    test -e "$scrub" && rm -f "$scrub" && test -z "$(ls -A "${vol_root}/${subdir}")"
-    if [ $? -ne 0 ]; then
+    if ! rm -f "$scrub"; then
         echo "  $(date) = Scrubbing failed. Not freeing $pv... will retry later."
         return
     fi

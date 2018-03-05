@@ -65,10 +65,10 @@ spec:
   flexVolume:
     driver: "rht/glfs-block-subvol"
     options:
-      cluster: $servers
-      volume: $volume
-      dir: ${blockstore_base}/${subdir}
-      file: $blockfile
+      cluster: "$servers"
+      volume: "$volume"
+      dir: "${blockstore_base}/${subdir}"
+      file: "$blockfile"
 EOT
 }
 
@@ -112,10 +112,6 @@ while [ "$i" -le "$i_end" ]; do
         echo "Unable to create $dir"
         exit 2
     fi
-    if ! chmod 777 "$dir"; then
-        echo "Unable to set permissions on $dir"
-        exit 2
-    fi
     blockfile=$(tohexname "$i")
     blockfqpath="${base_path}/${subdir}/${blockfile}"
     # File should not exist, or do not mess up existing devices here!
@@ -128,18 +124,8 @@ while [ "$i" -le "$i_end" ]; do
         echo "Unable to create file ${blockfile}"
         exit 2
     fi
-    if ! chmod 777 "$blockfqpath"; then
-        echo "Unable to set permissions on ${blockfile}"
-        exit 2
-    fi
     # Create a sparse file of required volume size
-    # 2097152 = 1024 * 1024 * 1024 (GB to bytes) / 512 (obs in dd)
-    seek_end=$((volsize_gb*2097152))
-    if [ $? -eq 3 ]; then
-        echo "Arithmetic error in expr, unable to setup ${blockfile}"
-        exit 2
-    fi
-    if ! dd seek="${seek_end}" obs=512 ibs=512 count=1 if=/dev/null of="${blockfqpath}" status=none ; then
+    if ! dd bs=1 count=1 if=/dev/zero of="${blockfqpath}" seek="$((volsize_gb * 1024 * 1024 *1024))" status=none; then
         echo "Error in dd to ${blockfile}"
         exit 2
     fi
