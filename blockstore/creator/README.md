@@ -64,3 +64,13 @@ The Gluster volume may be unmounted:
 $ sudo umount /mnt/data
 $ sudo rmdir /mnt/data
 ```
+
+## Note on gluster-block-subvol-sc.yml
+
+This is a convinence file placed here. This is to be used in an Openshift or a
+k8s environment, when it is desired that the gluster-block-subvol be made the
+default storage class. To enable gluster-block-subvol to be the default stroage
+class, assuming that the PVs are created use,
+```sh
+$ kubectl apply -f gluster-block-subvol-sc.yml
+```

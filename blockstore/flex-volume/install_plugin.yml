@@ -13,12 +13,17 @@
         name: "{{ install_loc }}"
         state: directory
 
-# TODO: Check package installation for which, jq and util-linux
-    - name: Make sure jq is available
-      copy:
-        src: jq
-        dest: "{{ install_loc }}/jq"
-        mode: 0755
+    - name: Install required dependencies
+      yum:
+        state: present
+        name: "{{ item }}"
+      with_items:
+        - coreutils
+        - util-linux
+        - sed
+        - grep
+        - gawk
+        - jq
 
     - name: Copy plugin to workers
       template:

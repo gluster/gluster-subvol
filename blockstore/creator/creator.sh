@@ -134,8 +134,7 @@ while [ "$i" -le "$i_end" ]; do
         echo "mkfs.xfs failed for ${blockfqpath}"
         exit 2
     fi
-    # TODO: Check mount (?)
-    # TODO: mkPvTemplate is as is, may need modifications
+
     mkPvTemplate "$servers" "$volume_name" "$subdir" "$blockfile" "${volsize_gb}Gi" "$supervol_uuid" >> "${base_path}/pvs-${i_start}-${i_end}.yml"
     ((++i))
 done

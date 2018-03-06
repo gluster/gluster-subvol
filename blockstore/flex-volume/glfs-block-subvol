@@ -92,13 +92,13 @@ function doMount() {
     local json="$2"
 
     local cluster
-    cluster=$(echo "$2" | $JQ -r '.cluster')
+    cluster=$(echo "$2" | jq -r '.cluster')
     local volume
-    volume=$(echo "$json" | $JQ -r '.volume')
+    volume=$(echo "$json" | jq -r '.volume')
     local subdir
-    subdir=$(echo "$json" | $JQ -r '.dir')
+    subdir=$(echo "$json" | jq -r '.dir')
     local blockfile
-    blockfile=$(echo "$json" | $JQ -r '.file')
+    blockfile=$(echo "$json" | jq -r '.file')
     if [ ! -n "${cluster}" ] || [ ! -n "${volume}" ] || [ ! -n "${subdir}" ] || [ ! -n "${blockfile}" ]; then
         local msg="cluster=$cluster volume=$volume subdir=$subdir blockfile=$blockfile"
         local result="{\"status\": \"Failure\", \"message\": \"$msg\"}"
@@ -144,6 +144,8 @@ function doMount() {
             # Protect loop mount as well within the lock, to ensure gluster
             # volume is not unmounted before this is complete
             execute mount "${mountname}/${subdir}/${blockfile}" "${mountdir}" -t xfs -o loop,discard
+            # TODO: if the above mount failed and this instance was resposible
+            #       for mounting the main vol, then unmount the main vol
         fi
         # force unlock due to fork of mount process
         flock -u -n 9
@@ -214,6 +216,13 @@ function doUnmount() {
     log "Using lockfile: $lockfile"
     ( flock 9 || exit 99
         local mcount
+        # TODO: In a tight loop test for mounting and unmounting devices, found
+        #       that in certain cases the losetup returns 1 device as in use,
+        #       and hence the unmount of the gluster volume is not done.
+        #       Subsequently checking if losetup still reports the same, comes
+        #       out -ve, which looks like some stale reporting by losetup.
+        #       This is not addressed, as it does not cause an issue, and at a
+        #       later mount/unmount cycle the gluster volume could get unmounted
         mcount=$(losetup --list -O BACK-FILE | grep -c "$gdevicedir")
         log "$gdevicedir has $mcount loop mounted files"
         if [[ "$mcount" -eq 0 ]]; then
@@ -232,19 +241,15 @@ function doUnmount() {
     retResult $rc "$result"
 }
 
-
-#-- make sure jq is installed
-JQ=$(which jq 2> /dev/null)
-if [[ ! -x ${JQ} ]]; then
-    rMessage="Unable to find 'jq' in PATH. Please install jq."
-    retResult $RC_FAIL "$rMessage"
-fi
-# TODO: remove rpm check and check for commands instead
-if ! rpm -q util-linux >& /dev/null; then
-    rMessage="Package util-linux is not installed. Please install util-linux package."
-    retResult $RC_FAIL "$rMessage"
-fi
-# TODO: PATH check for which and losetup(?)
+# It is assumed that coreutils and util-linux are installed, thus providing,
+#   - coreutils: date, dirname, echo, mkdir, rmdir
+#   - util-linux: mount, losetup, umount, flock
+for chkcmd in jq sed grep awk; do
+    if ! command -v "$chkcmd" >/dev/null; then
+        rMessage="{\"status\": \"Failure\", \"message\": \"Unable to find '${chkcmd}' in PATH. Please install ${chkcmd}.\"}"
+        retResult $RC_FAIL "$rMessage"
+    fi
+done
 
 log "> $*"
 cmd=$1
