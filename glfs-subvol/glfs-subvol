@@ -35,7 +35,7 @@ LOCKPATH=/var/lock/glfs-subvol
 #-- Make an entry in the log file (if enabled)
 function log() {
     if [[ $DEBUG -gt 0 ]]; then
-        echo "[$TIME] $*" >> $DEBUGFILE
+        echo "$(date "+%b %d %T") [$TIME] $*" >> $DEBUGFILE
     fi
 }
 
