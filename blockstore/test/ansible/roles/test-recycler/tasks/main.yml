@@ -1,0 +1,25 @@
+# vim: set ts=2 sw=2 et :
+---
+
+- name: Validate role variables
+  assert:
+    that:
+    - "gluster_subvol is defined"
+    - "gluster_subvol.maxinstances >= 1"
+    - "kube_setup is defined"
+    - "kube_setup.kubeconfig is defined"
+
+- name: Cleanup test environment
+  include_tasks: delete-test-pod.yml
+  vars:
+    pod_instancename: "testpod{{ item }}"
+    cleanup: "yes"
+  with_sequence: count="{{ gluster_subvol.maxinstances }}"
+
+- include_tasks: scale-pods.yml
+  vars:
+    pod_scale: 1
+
+- include_tasks: scale-pods.yml
+  vars:
+    pod_scale: "{{ gluster_subvol.maxinstances - 1 }}"

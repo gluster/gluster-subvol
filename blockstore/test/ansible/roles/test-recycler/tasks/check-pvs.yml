@@ -1,0 +1,29 @@
+# vim: set ts=2 sw=2 et :
+---
+
+- name: Create temp directory
+  command: mktemp -d /tmp/test-recycler-XXXXXX
+  register: mktemp
+  changed_when: false
+
+- set_fact:
+    tempdir: "{{ mktemp.stdout }}"
+
+- template:
+    src: check-pvs.sh.j2
+    dest: "{{ tempdir }}/check-pvs.sh"
+    mode: u+rx,g+rx,o+rx
+  changed_when: false
+
+- name: Waiting for all PVs to become available at end of test run
+  command: "{{ tempdir }}/check-pvs.sh"
+  register: pvtask_result
+  retries: 5
+  delay: 10
+  until: pvtask_result.rc == 0
+
+- name: Remove temp directory
+  file:
+    name: "{{ tempdir }}"
+    state: absent
+  changed_when: false

@@ -1,0 +1,8 @@
+# vim: set ts=2 sw=2 et :
+---
+
+- shell: kubectl get pods -a | sed -n "/{{ pod_instancename }}-/s/ \+/ /gp" | awk '{print $3}'
+  retries: 5
+  delay: 3
+  register: pod_result
+  until: pod_result.stdout == "Completed"

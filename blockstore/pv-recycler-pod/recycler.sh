@@ -20,7 +20,7 @@ function usage() {
 }
 
 sa_dir=/var/run/secrets/kubernetes.io/serviceaccount
-kc_args="--server=https://kubernetes.default.svc.cluster.local --token=$(cat $sa_dir/token) --certificate-authority=$sa_dir/ca.crt"
+kc_args=("--server=https://kubernetes.default.svc.cluster.local" "--token=$(cat $sa_dir/token)" "--certificate-authority=$sa_dir/ca.crt")
 blockstore_base="blockstore"
 
 function create_blockdevice() {
@@ -50,7 +50,7 @@ function recycle_pv() {
     # kubectl multiple times.
     # Subdirectory checks
     local subdir
-    if ! subdir=$(kubectl "$kc_args" get pv/"$pv" \
+    if ! subdir=$(kubectl "${kc_args[@]}" get pv/"$pv" \
         -ojsonpath='{.spec.flexVolume.options.dir}'); then
         echo "Failed parsing PV $pv (unable to get backing dir)"
         return
@@ -69,7 +69,7 @@ function recycle_pv() {
 
     # File checks
     local blockfile
-    if blockfile=$(kubectl "$kc_args" get pv/"$pv" \
+    if ! blockfile=$(kubectl "${kc_args[@]}" get pv/"$pv" \
         -ojsonpath='{.spec.flexVolume.options.file}'); then
         echo "Failed parsing PV $pv (unable to get backing file)"
         return
@@ -82,7 +82,7 @@ function recycle_pv() {
 
     # Size checks
     local capacity_str
-    if capacity_str=$(kubectl "$kc_args" get pv/"$pv" \
+    if ! capacity_str=$(kubectl "${kc_args[@]}" get pv/"$pv" \
         -ojsonpath='{.spec.capacity.storage}'); then
         echo "Failed parsing PV $pv (unable to get backing file capacity)"
         return
@@ -108,11 +108,15 @@ function recycle_pv() {
     echo "  $(date) = Scrubbing successful. Marking $pv as available."
 
     # Mark it available
-    kubectl "$kc_args" patch pv/"$pv" --type json -p'[{"op":"remove", "path":"/spec/claimRef"}, {"op":"replace", "path":"/status/phase", "value":"Available"}]'
+    kubectl "${kc_args[@]}" patch pv/"$pv" --type json -p'[{"op":"remove", "path":"/spec/claimRef"}, {"op":"replace", "path":"/status/phase", "value":"Available"}]'
 }
 
 function recycle_all() {
-    pvs=$(kubectl "$kc_args" get pv \
+    # TODO: Check and determine how to request bounded list of entries, rather
+    # than potentially overflowing the contents of the pvs variable. There seems
+    # to be a --chunk-size option, but that still returns all in current
+    # experiments.
+    pvs=$(kubectl "${kc_args[@]}" get pv \
         -l supervol="$uuid" \
         -ojsonpath='{range .items[*]}{.metadata.name} {.status.phase}{"\n"}{end}' \
         | grep Released | cut -f1 -d' ')
@@ -123,13 +127,13 @@ function recycle_all() {
 
 if [ $# -ne 1 ]; then usage; exit 1; fi
 
-vol_root="$1/${blockstore_base}"
+vol_root="$1"
 
-if [ ! -f "${vol_root}/supervol-uuid" ]; then
-    echo "Unable to read UUID from volume (${vol_root}/supervol-uuid)"
+if [ ! -f "${vol_root}/${blockstore_base}/supervol-uuid" ]; then
+    echo "Unable to read UUID from volume (${vol_root}/${blockstore_base}/supervol-uuid)"
     exit 1;
 fi
-uuid=$(cat "${vol_root}/supervol-uuid")
+uuid=$(cat "${vol_root}/${blockstore_base}/supervol-uuid")
 
 echo "Recycling block devices for supervol: $uuid"
 

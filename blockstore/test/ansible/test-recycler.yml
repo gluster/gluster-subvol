@@ -1,0 +1,16 @@
+# vim: set ts=2 sw=2 et :
+---
+
+- name: Test gluster-block-subvol-recycler
+  hosts: master
+  become: false
+  tasks:
+  - include_role:
+      name: test-recycler
+    vars:
+      gluster_subvol:
+        accessmode: ReadWriteOnce
+        storageclass: gluster-block-subvol
+        maxinstances: 12
+      kube_setup:
+        kubeconfig: /home/vagrant/.kube/admin.conf

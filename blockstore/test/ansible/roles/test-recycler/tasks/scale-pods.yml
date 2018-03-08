@@ -1,0 +1,21 @@
+# vim: set ts=2 sw=2 et :
+---
+
+- include_tasks: create-test-pod.yml
+  vars:
+    pod_instancename: "testpod{{ item }}"
+  with_sequence: count="{{ pod_scale }}"
+
+- name: Check if all pods are done
+  include_tasks: check-test-pod.yml
+  vars:
+    pod_instancename: "testpod{{ item }}"
+  with_sequence: count="{{ pod_scale }}"
+
+- include_tasks: delete-test-pod.yml
+  vars:
+    pod_instancename: "testpod{{ item }}"
+  with_sequence: count="{{ pod_scale }}"
+
+# Check all PVs are in "Available" state, after 10+ seconds
+- include_tasks: check-pvs.yml

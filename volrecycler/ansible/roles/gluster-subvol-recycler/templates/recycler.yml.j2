@@ -9,7 +9,7 @@ spec:
   capacity:
     storage: 1Mi
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
   glusterfs:
     endpoints: {{ gluster_subvol_recycler.gluster_endpoint }}
@@ -29,7 +29,7 @@ metadata:
   namespace: {{ gluster_subvol_recycler.namespace }}
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
       storage: 1Mi
