@@ -69,3 +69,6 @@ Once these changes are made, the pod can be started:
 ```sh
 kubectl apply -f volrecycler.yml
 ```
+
+## Docker image
+The docker image can be build using the `Dockerfile` provided in this directory. The links are relative to the root folder, so `docker build` command has to be invoked from the root folder of this project. (parent folder of `volrecycler` directory) 
