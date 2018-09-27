@@ -64,7 +64,7 @@ function doInit() {
     if [[ "x$msg" != "x" ]] ; then
         result="{\"status\": \"Failure\", \"message\": \"${msg}\"}"
     else
-        result="{\"status\": \"Success\", \"capabilities\": {\"attach\": false, \"selinuxRelabel\": false}}"
+        result="{\"status\": \"Success\", \"capabilities\": {\"attach\": false, \"selinuxRelabel\": false, \"fsGroup\": false}}"
     fi
     retResult $RC_OK "$result"
 }
