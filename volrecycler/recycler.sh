@@ -50,6 +50,15 @@ function recycle_pv() {
         echo "  $(date) = Scrubbing failed. Not freeing pv... will retry later."
         return
     fi
+
+    # Since the flexvol plugin no longer enables fsgroup change, we need to
+    # ensure the root of the PV is writable by all in preparation for next
+    # usage
+    if ! chmod 777 "$scrub"; then
+        echo "  $(date) = Failed setting permissions on $scrub. Not freeing pv... will retry later."
+        return
+    fi
+
     echo "  $(date) = Scrubbing successful. Marking PV as available."
 
     # Mark it available
