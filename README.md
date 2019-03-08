@@ -1,5 +1,8 @@
 # Overview
 
+[![Build
+Status](https://travis-ci.org/gluster/gluster-subvol.svg?branch=master)](https://travis-ci.org/gluster/gluster-subvol)
+
 This repo contains files necessary to use subdirectories of Gluster volumes as
 persistent volumes in Kubernetes and OpenShift. It consists of three main items:
 
@@ -15,10 +18,12 @@ subdirectories and establish quotas.
 
 ## volrecycler
 
-`image: quay.io/gluster/gluster-subvol-volrecycler` [![Docker Repository on
+[![Docker Repository on
 Quay](https://quay.io/repository/gluster/gluster-subvol-volrecycler/status
 "Docker Repository on
 Quay")](https://quay.io/repository/gluster/gluster-subvol-volrecycler)
+
+`image: quay.io/gluster/gluster-subvol-volrecycler`
 
 This is a pod that is run in the cluster to watch for PVs that get released. It
 deletes any data contained in them and marks them as available for use again.
