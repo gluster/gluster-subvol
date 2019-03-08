@@ -1,6 +1,6 @@
 # Container image names
-RECYCLER_IMAGE := gluster/gluster-subvol-volrecycler
 OPERATOR_IMAGE := gluster/gluster-subvol-operator
+RECYCLER_IMAGE := gluster/gluster-subvol-volrecycler
 
 OPERATOR_SDK_VERSION := v0.5.0
 
