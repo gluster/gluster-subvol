@@ -3,17 +3,25 @@
 This repo contains files necessary to use subdirectories of Gluster volumes as
 persistent volumes in Kubernetes and OpenShift. It consists of three main items:
 
-1. `glfs-subvol`  
-   This is a a flex volume plugin to allow mounting Gluster subdirectories into
-containers.
-2. `volcreator`  
-   This is a script that can be run on a Gluster server to pre-create the
-   subdirectories and establish quotas.
-3. `volrecycler`  
-   This is a pod that is run in the cluster to watch for PVs that get released.
-   It deletes any data contained in them and marks them as available for use
-   again.
+## glfs-subvol
 
+This is a a flex volume plugin to allow mounting Gluster subdirectories into
+containers.
+
+## volcreator
+
+This is a script that can be run on a Gluster server to pre-create the
+subdirectories and establish quotas.
+
+## volrecycler
+
+`image: quay.io/gluster/gluster-subvol-volrecycler` [![Docker Repository on
+Quay](https://quay.io/repository/gluster/gluster-subvol-volrecycler/status
+"Docker Repository on
+Quay")](https://quay.io/repository/gluster/gluster-subvol-volrecycler)
+
+This is a pod that is run in the cluster to watch for PVs that get released. It
+deletes any data contained in them and marks them as available for use again.
 
 ---
 # License

@@ -1,0 +1,36 @@
+---
+# yamllint disable rule:line-length
+
+sudo: true
+
+addons:
+  apt:
+    packages:
+      - docker-ce
+      - python
+      - make
+      - realpath
+      - ruby
+
+env:
+  global:
+    - RECYCLER_IMAGE="gluster/gluster-subvol-volrecycler"
+
+jobs:
+  include:
+    - name: Recycler
+      script:
+        - make volrecycler
+      deploy:
+        # Master branch will push the container to :latest
+        - provider: script
+          on:  # yamllint disable-line rule:truthy
+            branch: master
+          script: .travis/push_container.sh ${RECYCLER_IMAGE} verbatim latest
+        # Tags of the form v + SEMVER (e.g., v1.2.3) will push to the
+        # corresponding container version number (e.g., :1.2.3).
+        - provider: script
+          on:  # yamllint disable-line rule:truthy
+            tags: true
+            condition: $TRAVIS_TAG =~ ^v[0-9]+
+          script: .travis/push_container.sh ${RECYCLER_IMAGE} version "$TRAVIS_TAG"
