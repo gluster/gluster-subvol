@@ -17,13 +17,14 @@ RUN chmod 755 /recycler.sh && \
 ARG builddate="(unknown)"
 ARG version="(unknown)"
 
-LABEL build-date="${builddate}"
-LABEL io.k8s.description="Pod to clean and free gluster-subvol PVs"
-LABEL name="gluster/gluster-subvol-volrecycler"
-LABEL Summary="Pod to clean and free gluster-subvol PVs"
-LABEL vcs-type="git"
-LABEL vcs-url="https://github.com/gluster/gluster-subvol"
-LABEL vendor="Gluster.org"
-LABEL version="${version}"
+LABEL org.label-schema.build-date="${builddate}"
+LABEL org.label-schema.description="Pod to clean and free gluster-subvol PVs"
+LABEL org.label-schema.license="Apache-2.0"
+LABEL org.label-schema.name="gluster-subvol volume recycler"
+LABEL org.label-schema.schema-version = "1.0"
+LABEL org.label-schema.vcs-ref="${version}"
+LABEL org.label-schema.vcs-url="https://github.com/gluster/gluster-subvol"
+LABEL org.label-schema.vendor="Gluster.org"
+LABEL org.label-schema.version="${version}"
 
 ENTRYPOINT [ "/locker.sh" ]
