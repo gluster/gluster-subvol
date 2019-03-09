@@ -15,8 +15,7 @@ spec:
       serviceAccountName: gluster-subvol-operator
       containers:
         - name: gluster-subvol-operator
-          # Replace this with the built image name
-          image: REPLACE_IMAGE
+          image: quay.io/gluster/gluster-subvol-operator:latest
           ports:
           - containerPort: 60000
             name: metrics
