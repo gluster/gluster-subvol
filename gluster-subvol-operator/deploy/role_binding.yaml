@@ -9,3 +9,20 @@ roleRef:
   kind: Role
   name: gluster-subvol-operator
   apiGroup: rbac.authorization.k8s.io
+
+---
+
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: gluster-subvol-operator
+subjects:
+- kind: ServiceAccount
+  name: gluster-subvol-operator
+  # XXX This needs to be changed based on the namespace in which the operator is
+  # deployed
+  namespace: gluster-subvol
+roleRef:
+  kind: ClusterRole
+  name: gluster-subvol-operator
+  apiGroup: rbac.authorization.k8s.io

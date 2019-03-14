@@ -1,48 +1,21 @@
-# Default values for glustersubvol.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+# Default values
 
-replicaCount: 1
-
-image:
-  repository: nginx
-  tag: stable
-  pullPolicy: IfNotPresent
-
-nameOverride: ""
-fullnameOverride: ""
-
-service:
-  type: ClusterIP
-  port: 80
-
-ingress:
-  enabled: false
-  annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
-  paths: []
-  hosts:
-    - chart-example.local
-  tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
-
-resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #  cpu: 100m
-  #  memory: 128Mi
-  # requests:
-  #  cpu: 100m
-  #  memory: 128Mi
-
+# Node selector controls which nodes run the plugin and are eligible to
+# run recyclers.
 nodeSelector: {}
-
+# Add tolerations to the DS and recycler pods
 tolerations: []
-
-affinity: {}
+# Whether the flex plugin DS should be deployed
+deployFlex: true
+# Set the directory (hostPath) where the flex plugin should be deployed
+# on the nodes
+flexvolPath: /usr/libexec/kubernetes/kubelet-plugins/volume/exec
+# Listing of each supervol that should have a recycler
+supervols: []
+# Container image for the flexvol DS
+flexvolImage: quay.io/gluster/gluster-subvol-flexplugin:latest
+# Container image for the subvol recycler
+recyclerImage: quay.io/gluster/gluster-subvol-recycler:latest
+# Name of the secret that holds the Gluster TLS keys. This must be a
+# Secret in the same namespace as this CR.
+tlsSecret: ""
