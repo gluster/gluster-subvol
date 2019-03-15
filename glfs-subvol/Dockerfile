@@ -1,8 +1,14 @@
 FROM centos:7
 
-RUN yum update -y && \
+RUN yum install -y epel-release && \
+    yum update -y && \
+    yum install -y \
+      jq \
+    && \
     yum clean all -y && \
     rm -rf /var/cache/yum
+
+COPY entry_flexvol.sh glfs-subvol /
 
 ARG builddate="(unknown)"
 ARG version="(unknown)"

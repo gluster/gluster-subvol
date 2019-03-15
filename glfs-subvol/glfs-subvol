@@ -194,7 +194,7 @@ function doUnmount() {
 
 
 #-- make sure jq is installed
-JQ=$(which jq 2> /dev/null || echo "$scriptdir/jq")
+JQ=$(which jq 2> /dev/null || echo "$scriptdir/.bin/jq")
 if [[ $? -ne 0 || ! -x ${JQ} ]]; then
     rStatus=$S_FAILURE
     rMessage="Unable to find 'jq' in PATH. Please install jq."
