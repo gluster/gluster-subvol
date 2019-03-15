@@ -8,6 +8,12 @@ persistent volumes in Kubernetes and OpenShift. It consists of several items:
 
 ## glfs-subvol
 
+[![Docker Repository on
+Quay](https://quay.io/repository/gluster/gluster-subvol-plugin/status "Docker
+Repository on Quay")](https://quay.io/repository/gluster/gluster-subvol-plugin)
+
+`image: quay.io/gluster/gluster-subvol-plugin`
+
 This is a a flex volume plugin to allow mounting Gluster subdirectories into
 containers.
 
