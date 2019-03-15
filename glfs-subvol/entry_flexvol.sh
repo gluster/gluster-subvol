@@ -5,17 +5,21 @@ set -e -opipefail
 FLEXVOL_PLUGIN_PATH=${FLEXVOL_PLUGIN_PATH-/usr/libexec/kubernetes/kubelet-plugins/volume/exec}
 
 # Copies a source file to a destination, ensuring an atomic overwrite of an old
-# file (if present).
+# file (if present). It also ensures the temporary file begins w/ a dot to
+# ensure it doesn't get picked up by the plugin autodiscovery mechanism. See:
+# https://github.com/kubernetes/community/blob/master/contributors/design-proposals/storage/flexvolume-deployment.md#detailed-design
 function safe_copy {
         SRC="$1"
-        DST="$2"
+        DST_DIR="$2"
 
-        cp -av "$SRC" "${DST}.new"
-        mv -v "${DST}.new" "${DST}"
+        FNAME="$(basename "${SRC}")"
+
+        cp -av "$SRC" "${DST_DIR}/.${FNAME}"
+        mv -fv "${DST_DIR}/.${FNAME}" "${DST_DIR}/${FNAME}"
 }
 
 PLUGINDIR="${FLEXVOL_PLUGIN_PATH}/rht~glfs-subvol"
 mkdir -p "${PLUGINDIR}"
 mkdir -p "${PLUGINDIR}/.bin"
-safe_copy /usr/bin/jq "${PLUGINDIR}/.bin/jq"
-safe_copy /glfs-subvol "${PLUGINDIR}/glfs-subvol"
+safe_copy /usr/bin/jq "${PLUGINDIR}/.bin/"
+safe_copy /glfs-subvol "${PLUGINDIR}/"
