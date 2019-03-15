@@ -5,6 +5,43 @@ That includes both the flexvol plugin and the recycler pods.
 
 # Usage
 
+## Starting the operator
+
+Create the `gluster-subvol` namespace and start the operator:
+
+```
+$ kubectl create namespace gluster-subvol
+$ kubectl -n gluster-subvol apply -f gluster-subvol-operator/deploy/service_account.yaml
+$ kubectl -n gluster-subvol apply -f gluster-subvol-operator/deploy/role.yaml
+$ kubectl -n gluster-subvol apply -f gluster-subvol-operator/deploy/role_binding.yaml
+$ kubectl -n gluster-subvol apply -f gluster-subvol-operator/deploy/operator.yaml
+```
+
+## Create the custom resource
+
+The CR defines the supervols that will have recyclers.
+
+```yaml
+apiVersion: gluster-subvol.gluster.org/v1alpha1
+kind: GlusterSubvol
+metadata:
+  name: subvol-config
+spec:
+  supervols:
+    # Name of the supervol on the server
+    - name: supervol01
+      # List of IP addresses for the gluster cluster
+      servers:
+        - "192.168.121.6"
+        - "192.168.121.228"
+        - "192.168.121.222"
+    - name: supervole2a03
+      servers:
+        - "192.168.121.6"
+        - "192.168.121.228"
+        - "192.168.121.222"
+```
+
 # Development
 
 There are three ways to develop/test the components of the operator:
