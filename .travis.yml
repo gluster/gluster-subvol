@@ -15,6 +15,7 @@ addons:
 env:
   global:
     - OPERATOR_IMAGE="gluster/gluster-subvol-operator"
+    - PLUGIN_IMAGE="gluster/gluster-subvol-plugin"
     - RECYCLER_IMAGE="gluster/gluster-subvol-volrecycler"
 
 jobs:
@@ -37,6 +38,23 @@ jobs:
             tags: true
             condition: $TRAVIS_TAG =~ ^v[0-9]+
           script: .travis/push_container.sh ${OPERATOR_IMAGE} version "$TRAVIS_TAG"
+
+    - name: Flexvol Plugin
+      script:
+        - make subvol-plugin
+      deploy:
+        # Master branch will push the container to :latest
+        - provider: script
+          on:  # yamllint disable-line rule:truthy
+            branch: master
+          script: .travis/push_container.sh ${PLUGIN_IMAGE} verbatim latest
+        # Tags of the form v + SEMVER (e.g., v1.2.3) will push to the
+        # corresponding container version number (e.g., :1.2.3).
+        - provider: script
+          on:  # yamllint disable-line rule:truthy
+            tags: true
+            condition: $TRAVIS_TAG =~ ^v[0-9]+
+          script: .travis/push_container.sh ${PLUGIN_IMAGE} version "$TRAVIS_TAG"
 
     - name: Recycler
       script:
