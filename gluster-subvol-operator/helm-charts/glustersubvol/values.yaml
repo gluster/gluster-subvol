@@ -1,0 +1,21 @@
+# Default values
+
+# Node selector controls which nodes run the plugin and are eligible to
+# run recyclers.
+nodeSelector: {}
+# Add tolerations to the DS and recycler pods
+tolerations: []
+# Whether the flex plugin DS should be deployed
+deployFlex: true
+# Set the directory (hostPath) where the flex plugin should be deployed
+# on the nodes
+flexvolPath: /usr/libexec/kubernetes/kubelet-plugins/volume/exec
+# Listing of each supervol that should have a recycler
+supervols: []
+# Container image for the flexvol DS
+flexvolImage: quay.io/gluster/gluster-subvol-flexplugin:latest
+# Container image for the subvol recycler
+recyclerImage: quay.io/gluster/gluster-subvol-recycler:latest
+# Name of the secret that holds the Gluster TLS keys. This must be a
+# Secret in the same namespace as this CR.
+tlsSecret: ""

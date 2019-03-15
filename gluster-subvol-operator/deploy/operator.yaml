@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gluster-subvol-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: gluster-subvol-operator
+  template:
+    metadata:
+      labels:
+        name: gluster-subvol-operator
+    spec:
+      serviceAccountName: gluster-subvol-operator
+      containers:
+        - name: gluster-subvol-operator
+          image: quay.io/gluster/gluster-subvol-operator:latest
+          ports:
+          - containerPort: 60000
+            name: metrics
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "gluster-subvol-operator"

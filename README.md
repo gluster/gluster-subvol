@@ -4,12 +4,26 @@
 Status](https://travis-ci.org/gluster/gluster-subvol.svg?branch=master)](https://travis-ci.org/gluster/gluster-subvol)
 
 This repo contains files necessary to use subdirectories of Gluster volumes as
-persistent volumes in Kubernetes and OpenShift. It consists of three main items:
+persistent volumes in Kubernetes and OpenShift. It consists of several items:
 
 ## glfs-subvol
 
 This is a a flex volume plugin to allow mounting Gluster subdirectories into
 containers.
+
+## subvol-operator
+
+[![Docker Repository on
+Quay](https://quay.io/repository/gluster/gluster-subvol-operator/status "Docker
+Repository on
+Quay")](https://quay.io/repository/gluster/gluster-subvol-operator)
+
+`image: quay.io/gluster/gluster-subvol-operator`
+
+This is a [Helm](https://helm.sh)-based operator created with the
+[operator-sdk](https://github.com/operator-framework/operator-sdk). It is
+designed to deploy the flexvol plugin (glfs-subvol) via a DaemonSet and the
+recycler(s) for the associated supervols (volrecycler).
 
 ## volcreator
 
