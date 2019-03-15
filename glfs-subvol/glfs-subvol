@@ -29,7 +29,7 @@ RC_FAIL=1
 cd "$(dirname $0)"
 scriptdir="$PWD"
 cd "$OLDPWD"
-MOUNTPATH=${scriptdir}/mnt
+MOUNTPATH=${scriptdir}/.mnt
 LOCKPATH=/var/lock/glfs-subvol
 
 #-- Make an entry in the log file (if enabled)
