@@ -2,7 +2,7 @@
 
 set -e -opipefail
 
-FLEXVOL_PLUGIN_PATH=${FLEXVOL_PLUGIN_PATH-/usr/libexec/kubernetes/kubelet-plugins/volume/exec}
+FLEXVOL_PLUGIN_PATH=/flexpath
 
 # Copies a source file to a destination, ensuring an atomic overwrite of an old
 # file (if present). It also ensures the temporary file begins w/ a dot to
