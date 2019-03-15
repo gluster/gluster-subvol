@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: '{{ include "glustersubvol.fullname" . }}-plugin'
+  labels:
+    app.kubernetes.io/name: {{ include "glustersubvol.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    helm.sh/chart: {{ include "glustersubvol.chart" . }}
+spec:
+  selector:
+    matchLabels:
+      gluster-subvol-plugin: {{ include "glustersubvol.fullname" . }}-{{ .name }}
+  template:
+    metadata:
+      labels:
+        gluster-subvol-plugin: {{ include "glustersubvol.fullname" . }}-{{ .name }}
+    spec:
+      containers:
+        - name: plugin-installer
+          image: {{ .Values.flexvolImage }}
+          command: [ "/entry_flexvol.sh" ]
+          volumeMounts:
+          - name: flexpath
+            mountPath: /flexpath
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: flexpath
+        hostPath:
+          path: {{ .Values.flexvolPath }}
+  updateStrategy:
+    type: RollingUpdate

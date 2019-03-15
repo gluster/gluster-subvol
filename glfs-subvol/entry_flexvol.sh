@@ -23,3 +23,7 @@ mkdir -p "${PLUGINDIR}"
 mkdir -p "${PLUGINDIR}/.bin"
 safe_copy /usr/bin/jq "${PLUGINDIR}/.bin/"
 safe_copy /glfs-subvol "${PLUGINDIR}/"
+
+while true; do
+        sleep 3600
+done
