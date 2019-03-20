@@ -17,6 +17,21 @@ $ kubectl -n gluster-subvol apply -f gluster-subvol-operator/deploy/role_binding
 $ kubectl -n gluster-subvol apply -f gluster-subvol-operator/deploy/operator.yaml
 ```
 
+## Create a Secret to hold the CA TLS keys
+
+The same CA key & pem used to generate keys for the Gluster servers need to be
+inserted into a Kubernetes Secret so that client keys can be generated.
+
+Assuming the CA keys are `gluster_ca.key` and `gluster_ca.pem`, the secret can
+be created via:
+
+```
+$ kubectl create secret generic gluster-ca-key --from-file=ca.key=gluster_ca.key --from-file=ca.pem=gluster_ca.pem
+secret "gluster-ca-key" created
+```
+
+Enter the name of this secret in the custom resource, below.
+
 ## Create the custom resource
 
 The CR defines the supervols that will have recyclers.
@@ -40,6 +55,7 @@ spec:
         - "192.168.121.6"
         - "192.168.121.228"
         - "192.168.121.222"
+  tlsSecret: "gluster-ca-key"
 ```
 
 # Development

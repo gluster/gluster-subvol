@@ -10,23 +10,53 @@ metadata:
 spec:
   selector:
     matchLabels:
-      gluster-subvol-plugin: {{ include "glustersubvol.fullname" . }}-{{ .name }}
+      gluster-subvol-plugin: {{ include "glustersubvol.fullname" . }}
   template:
     metadata:
       labels:
-        gluster-subvol-plugin: {{ include "glustersubvol.fullname" . }}-{{ .name }}
+        gluster-subvol-plugin: {{ include "glustersubvol.fullname" . }}
     spec:
       containers:
         - name: plugin-installer
           image: {{ .Values.flexvolImage }}
           command: [ "/entry_flexvol.sh" ]
+          securityContext:
+            runAsUser: 0
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
           volumeMounts:
-          - name: flexpath
-            mountPath: /flexpath
-      terminationGracePeriodSeconds: 30
+            {{ if .Values.tlsSecret -}}
+            - name: cakeys
+              readOnly: true
+              mountPath: /tlskeys
+            {{ end -}}
+            - name: etcssl
+              mountPath: /etcssl
+            - name: flexpath
+              mountPath: /flexpath
+            - name: glusterd
+              mountPath: /glusterd
+      terminationGracePeriodSeconds: 10
       volumes:
-      - name: flexpath
-        hostPath:
-          path: {{ .Values.flexvolPath }}
+        {{ if .Values.tlsSecret -}}
+        - name: cakeys
+          secret:
+            secretName: {{ .Values.tlsSecret }}
+        {{ end -}}
+        - name: etcssl
+          hostPath:
+            path: /etc/ssl
+            type: DirectoryOrCreate
+        - name: flexpath
+          hostPath:
+            path: {{ .Values.flexvolPath }}
+            type: DirectoryOrCreate
+        - name: glusterd
+          hostPath:
+            path: /var/log/glusterd
+            type: DirectoryOrCreate
   updateStrategy:
     type: RollingUpdate

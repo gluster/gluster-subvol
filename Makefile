@@ -39,3 +39,9 @@ subvol-volrecycler:
 	  --build-arg version=$(VERSION) \
 	  -f volrecycler/Dockerfile \
 	  .
+
+.PHONY: push
+push: subvol-operator subvol-plugin subvol-volrecycler
+	docker push $(OPERATOR_IMAGE)
+	docker push $(PLUGIN_IMAGE)
+	docker push $(RECYCLER_IMAGE)

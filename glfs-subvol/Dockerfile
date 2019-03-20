@@ -4,9 +4,15 @@ RUN yum install -y epel-release && \
     yum update -y && \
     yum install -y \
       jq \
+      openssl \
     && \
     yum clean all -y && \
     rm -rf /var/cache/yum
+
+RUN mkdir /flexpath && \
+    mkdir /glusterd && \
+    mkdir /etcssl && \
+    mkdir /tlskeys
 
 COPY entry_flexvol.sh glfs-subvol /
 

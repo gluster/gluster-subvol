@@ -15,7 +15,7 @@ supervols: []
 # Container image for the flexvol DS
 flexvolImage: quay.io/gluster/gluster-subvol-plugin:latest
 # Container image for the subvol recycler
-recyclerImage: quay.io/gluster/gluster-subvol-recycler:latest
+recyclerImage: quay.io/gluster/gluster-subvol-volrecycler:latest
 # Name of the secret that holds the Gluster TLS keys. This must be a
 # Secret in the same namespace as this CR.
 tlsSecret: ""
