@@ -7,7 +7,7 @@ RECYCLER_IMAGE := $(OPERATOR_REPO_NAMESPACE)/gluster-subvol-volrecycler
 OPERATOR_SDK_VERSION := v0.5.0
 
 .PHONY: all
-all: subvol-operator subvol-plugin volrecycler
+all: subvol-operator subvol-plugin subvol-volrecycler
 
 BUILDDATE := $(shell date -u '+%Y-%m-%dT%H:%M:%S.%NZ')
 VERSION := $(shell git describe --match 'v[0-9]*' --tags --dirty 2> /dev/null || git describe --always --dirty)
@@ -32,8 +32,8 @@ subvol-plugin:
 	  --build-arg version=$(VERSION) \
 	  .
 
-.PHONY: volrecycler
-volrecycler:
+.PHONY: subvol-volrecycler
+subvol-volrecycler:
 	docker build -t $(RECYCLER_IMAGE) \
 	  --build-arg builddate=$(BUILDDATE) \
 	  --build-arg version=$(VERSION) \

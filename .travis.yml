@@ -58,7 +58,7 @@ jobs:
 
     - name: Recycler
       script:
-        - make volrecycler
+        - make subvol-volrecycler
       deploy:
         # Master branch will push the container to :latest
         - provider: script
