@@ -3,11 +3,13 @@ FROM centos:7
 RUN yum install -y epel-release && \
     yum update -y && \
     yum install -y \
-      jq \
       openssl \
     && \
     yum clean all -y && \
     rm -rf /var/cache/yum
+
+RUN curl -L https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 > /jq && \
+    chmod a+x /jq
 
 RUN mkdir /flexpath && \
     mkdir /glusterd && \

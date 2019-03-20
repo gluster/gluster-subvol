@@ -77,7 +77,7 @@ PLUGINDIR="${FLEXVOL_PLUGIN_PATH}/rht~glfs-subvol"
 log "Installing plugin"
 mkdir -p "${PLUGINDIR}"
 mkdir -p "${PLUGINDIR}/.bin"
-safe_copy /usr/bin/jq "${PLUGINDIR}/.bin/"
+safe_copy /jq "${PLUGINDIR}/.bin/"
 safe_copy /glfs-subvol "${PLUGINDIR}/"
 
 while true; do
