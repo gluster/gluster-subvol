@@ -13,10 +13,15 @@
         name: "{{ install_loc }}"
         state: directory
 
+    - name: Make sure plugin/.bin dir exists
+      file:
+        name: "{{ install_loc }}/.bin"
+        state: directory
+
     - name: Make sure jq is available
       copy:
         src: jq
-        dest: "{{ install_loc }}/jq"
+        dest: "{{ install_loc }}/.bin/jq"
         mode: 0755
 
     - name: Copy plugin to workers

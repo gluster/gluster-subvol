@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: '{{ include "glustersubvol.fullname" . }}-plugin'
+  labels:
+    app.kubernetes.io/name: {{ include "glustersubvol.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    helm.sh/chart: {{ include "glustersubvol.chart" . }}
+spec:
+  selector:
+    matchLabels:
+      gluster-subvol-plugin: {{ include "glustersubvol.fullname" . }}
+  template:
+    metadata:
+      labels:
+        gluster-subvol-plugin: {{ include "glustersubvol.fullname" . }}
+    spec:
+      containers:
+        - name: plugin-installer
+          image: {{ .Values.flexvolImage }}
+          command: [ "/entry_flexvol.sh" ]
+          securityContext:
+            runAsUser: 0
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            {{ if .Values.tlsSecret -}}
+            - name: cakeys
+              readOnly: true
+              mountPath: /tlskeys
+            {{ end -}}
+            - name: etcssl
+              mountPath: /etcssl
+            - name: flexpath
+              mountPath: /flexpath
+            - name: glusterd
+              mountPath: /glusterd
+      terminationGracePeriodSeconds: 10
+      volumes:
+        {{ if .Values.tlsSecret -}}
+        - name: cakeys
+          secret:
+            secretName: {{ .Values.tlsSecret }}
+        {{ end -}}
+        - name: etcssl
+          hostPath:
+            path: /etc/ssl
+            type: DirectoryOrCreate
+        - name: flexpath
+          hostPath:
+            path: {{ .Values.flexvolPath }}
+            type: DirectoryOrCreate
+        - name: glusterd
+          hostPath:
+            path: /var/log/glusterd
+            type: DirectoryOrCreate
+  updateStrategy:
+    type: RollingUpdate

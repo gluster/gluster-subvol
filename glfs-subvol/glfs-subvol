@@ -29,7 +29,7 @@ RC_FAIL=1
 cd "$(dirname $0)"
 scriptdir="$PWD"
 cd "$OLDPWD"
-MOUNTPATH=${scriptdir}/mnt
+MOUNTPATH=${scriptdir}/.mnt
 LOCKPATH=/var/lock/glfs-subvol
 
 #-- Make an entry in the log file (if enabled)
@@ -84,7 +84,8 @@ function doMount() {
     local mountdir="$1"
     local json="$2"
 
-    local cluster=$(echo $2 | $JQ -r '.cluster')
+    log "parsing json $json"
+    local cluster=$(echo "$json" | $JQ -r '.cluster')
     local volume=$(echo "$json" | $JQ -r '.volume')
     local subdir=$(echo "$json" | $JQ -r '.dir')
 
@@ -194,12 +195,15 @@ function doUnmount() {
 
 
 #-- make sure jq is installed
-JQ=$(which jq 2> /dev/null || echo "$scriptdir/jq")
+JQ=$(which jq 2> /dev/null || echo "$scriptdir/.bin/jq")
 if [[ $? -ne 0 || ! -x ${JQ} ]]; then
     rStatus=$S_FAILURE
     rMessage="Unable to find 'jq' in PATH. Please install jq."
     retResult
 fi
+log "Using jq: ${JQ}"
+[[ -x "${JQ}" ]] || retResult "$S_FAILURE" "jq is not executable"
+
 which flock >& /dev/null
 if [[ $? -ne 0 ]]; then
     rStatus=$S_FAILURE
