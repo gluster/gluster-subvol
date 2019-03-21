@@ -1,0 +1,12 @@
+# Set the directory (hostPath) where the flex plugin should be deployed
+# on the nodes
+flexvolPath: /usr/libexec/kubernetes/kubelet-plugins/volume/exec
+# Container image for the flexvol plugin installer
+installerImage: quay.io/gluster/gluster-subvol-plugin:latest
+# Node selector controls which nodes run the plugin
+nodeSelector: {}
+# Name of the secret that holds the Gluster TLS keys. This must be a
+# Secret in the same namespace as this CR.
+tlsSecret: ""
+# Add tolerations to the plugin DaemonSet
+tolerations: []

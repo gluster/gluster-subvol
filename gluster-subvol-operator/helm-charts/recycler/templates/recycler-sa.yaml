@@ -3,12 +3,12 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: '{{ include "glustersubvol.fullname" . }}-recycler'
+  name: '{{ include "recycler.fullname" . }}'
   labels:
-    app.kubernetes.io/name: {{ include "glustersubvol.name" . }}
+    app.kubernetes.io/name: {{ include "recycler.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
-    helm.sh/chart: {{ include "glustersubvol.chart" . }}
+    helm.sh/chart: {{ include "recycler.chart" . }}
 
 
 ---
@@ -18,10 +18,10 @@ kind: ClusterRole
 metadata:
   name: gluster-subvol:recycler:{{ .Release.Name }}
   labels:
-    app.kubernetes.io/name: {{ include "glustersubvol.name" . }}
+    app.kubernetes.io/name: {{ include "recycler.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
-    helm.sh/chart: {{ include "glustersubvol.chart" . }}
+    helm.sh/chart: {{ include "recycler.chart" . }}
 rules:
   - apiGroups: [""]
     resources: ["persistentvolumes"]
@@ -32,15 +32,15 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
-  name: '{{ include "glustersubvol.fullname" . }}-recycler'
+  name: '{{ include "recycler.fullname" . }}'
   labels:
-    app.kubernetes.io/name: {{ include "glustersubvol.name" . }}
+    app.kubernetes.io/name: {{ include "recycler.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
-    helm.sh/chart: {{ include "glustersubvol.chart" . }}
+    helm.sh/chart: {{ include "recycler.chart" . }}
 subjects:
   - kind: ServiceAccount
-    name: '{{ include "glustersubvol.fullname" . }}-recycler'
+    name: '{{ include "recycler.fullname" . }}'
     namespace: "{{ .Release.Namespace }}"
 roleRef:
   kind: ClusterRole
