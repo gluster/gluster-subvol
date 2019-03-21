@@ -68,7 +68,7 @@ spec:
     - "192.168.121.6"
     - "192.168.121.228"
     - "192.168.121.222"
-  # Override the recycler image
+  # Override the recycler image (optional)
   image: quay.io/gluster/gluster-subvol-volrecycler:latest
 
 ```
