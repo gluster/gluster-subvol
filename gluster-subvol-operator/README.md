@@ -11,6 +11,7 @@ Create the `gluster-subvol` namespace and start the operator:
 
 ```
 $ kubectl create namespace gluster-subvol
+$ kubectl -n gluster-subvol apply -f gluster-subvol-operator/deploy/crds/gluster-subvol_v1alpha1_flexvol_crd.yaml
 $ kubectl -n gluster-subvol apply -f gluster-subvol-operator/deploy/service_account.yaml
 $ kubectl -n gluster-subvol apply -f gluster-subvol-operator/deploy/role.yaml
 $ kubectl -n gluster-subvol apply -f gluster-subvol-operator/deploy/role_binding.yaml
@@ -19,7 +20,7 @@ $ kubectl -n gluster-subvol apply -f gluster-subvol-operator/deploy/operator.yam
 
 ## Create a Secret to hold the CA TLS keys
 
-The same CA key & pem used to generate keys for the Gluster servers need to be
+The same CA key & pem used to generate keys for the Gluster servers needs to be
 inserted into a Kubernetes Secret so that client keys can be generated.
 
 Assuming the CA keys are `gluster_ca.key` and `gluster_ca.pem`, the secret can
@@ -30,9 +31,28 @@ $ kubectl create secret generic gluster-ca-key --from-file=ca.key=gluster_ca.key
 secret "gluster-ca-key" created
 ```
 
-Enter the name of this secret in the custom resource, below.
+Enter the name of this secret in the `flexvol` custom resource, below.
 
 ## Create the custom resource
+
+The `flexvol` CR controlls the DaemonSet that deploys the flexvol plugin to the
+nodes.
+
+```yaml
+apiVersion: gluster-subvol.gluster.org/v1alpha1
+kind: Flexvol
+metadata:
+  name: flex
+spec:
+  # Path on the host to write the plugin (optional)
+  flexvolPath: "/usr/libexec/kubernetes/kubelet-plugins/volume/exec"
+  # Override the plugin installer image (optional)
+  installerImage: "quay.io/gluster/gluster-subvol-plugin:latest"
+  # Name of the secret holding the ca.key and ca.pem
+  tlsSecret: "gluster-ca-key"
+```
+
+## (OLD)
 
 The CR defines the supervols that will have recyclers.
 
