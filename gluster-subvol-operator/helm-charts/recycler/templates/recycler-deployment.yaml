@@ -1,0 +1,121 @@
+# For each supervol, there will be a deployment consisting of:
+# - endpoint to contact the gluster cluster
+# - PV for the supervol
+# - PVC for the supervol PV
+# - Deployment for the recycler
+
+---
+
+# EP for the PV to connect to the gluster cluster
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: {{ include "recycler.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "recycler.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    helm.sh/chart: {{ include "recycler.chart" . }}
+subsets:
+- addresses:
+  {{- range .Values.servers }}
+  - ip: {{ . }}
+  {{- end }}
+  ports:
+  - port: 1
+    protocol: TCP
+
+---
+
+#-- A PV for the big volume we're managing w/ this recycler instance
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ include "recycler.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "recycler.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    helm.sh/chart: {{ include "recycler.chart" . }}
+spec:
+  capacity:
+    # Capacity doesn't matter since the gluster vol is pre-provisioned
+    storage: 1Mi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  glusterfs:
+    endpoints: {{ include "recycler.fullname" . }}
+    path: {{ .Values.supervolName }}
+    readOnly: false
+  # Ensure we will only bind to the specific PVC
+  claimRef:
+    name: {{ include "recycler.fullname" . }}
+    namespace: {{ .Release.Namespace }}
+
+---
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ include "recycler.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "recycler.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    helm.sh/chart: {{ include "recycler.chart" . }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Mi
+  # Ensure we only bind to the specific PV
+  volumeName: {{ include "recycler.fullname" . }}
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "recycler.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "recycler.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    helm.sh/chart: {{ include "recycler.chart" . }}
+spec:
+  selector:
+    matchLabels:
+      gluster-subvol-recycler: {{ include "recycler.fullname" . }}
+  #-- Replicas must be 1. We don't support multiple recyclers for the same
+  #-- supervolume
+  replicas: 1
+  strategy:
+    #-- On update, kill all the old then create the new
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        gluster-subvol-recycler: {{ include "recycler.fullname" . }}
+        app.kubernetes.io/name: {{ include "recycler.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        helm.sh/chart: {{ include "recycler.chart" . }}
+    spec:
+      containers:
+      - name: volrecycler
+        image: {{ .Values.image }}
+        args:
+        #-- This needs to match the volume mountpoint
+        - "/data"
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      serviceAccount: {{ include "recycler.fullname" . }}
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ include "recycler.fullname" . }}

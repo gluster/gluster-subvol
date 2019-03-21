@@ -1,9 +1,9 @@
 ---
 - version: v1alpha1
   group: gluster-subvol.gluster.org
-  kind: GlusterSubvol
-  chart: /opt/helm/helm-charts/glustersubvol
-- version: v1alpha1
-  group: gluster-subvol.gluster.org
   kind: Flexvol
   chart: /opt/helm/helm-charts/flexvol
+- version: v1alpha1
+  group: gluster-subvol.gluster.org
+  kind: Recycler
+  chart: /opt/helm/helm-charts/recycler
