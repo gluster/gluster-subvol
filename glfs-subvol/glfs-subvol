@@ -201,8 +201,8 @@ if [[ $? -ne 0 || ! -x ${JQ} ]]; then
     rMessage="Unable to find 'jq' in PATH. Please install jq."
     retResult
 fi
-log "Using jq: ${JQ}"
-[[ -x "${JQ}" ]] || retResult "$S_FAILURE" "jq is not executable"
+[[ -x "${JQ}" ]] || retResult "$S_FAILURE" "jq ($JQ) is not executable"
+"${JQ}" . < /dev/null || retResult "$S_FAILURE" "Error running jq ($JQ)"
 
 which flock >& /dev/null
 if [[ $? -ne 0 ]]; then
