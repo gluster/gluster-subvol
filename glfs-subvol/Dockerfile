@@ -2,7 +2,9 @@ FROM centos:7
 
 RUN yum update -y && \
     yum install -y \
+      logrotate \
       openssl \
+      rsyslog \
     && \
     yum clean all -y && \
     rm -rf /var/cache/yum
@@ -10,12 +12,13 @@ RUN yum update -y && \
 RUN curl -L https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 > /jq && \
     chmod a+x /jq
 
-RUN mkdir /flexpath && \
+RUN mkdir /etcssl && \
+    mkdir /flexpath && \
     mkdir /glusterd && \
-    mkdir /etcssl && \
+    mkdir /log && \
     mkdir /tlskeys
 
-COPY entry_flexvol.sh glfs-subvol /
+COPY entry_flexvol.sh entry_logrotate.sh entry_logtail.sh glfs-subvol /
 
 ARG builddate="(unknown)"
 ARG version="(unknown)"

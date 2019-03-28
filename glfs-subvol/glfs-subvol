@@ -20,7 +20,7 @@
 
 # if DEBUG, log everything to a file as we do it
 DEBUG=1
-DEBUGFILE='/tmp/glfs-subdir.out'
+DEBUGFILE='/var/log/glusterfs/glfs-subdir.log'
 TIME=$(date +%s.%N)
 
 RC_OK=0
@@ -31,6 +31,10 @@ scriptdir="$PWD"
 cd "$OLDPWD"
 MOUNTPATH=${scriptdir}/.mnt
 LOCKPATH=/var/lock/glfs-subvol
+
+if [[ $DEBUG -gt 0 ]]; then
+        mkdir -p "$(dirname "$DEBUGFILE")"
+fi
 
 #-- Make an entry in the log file (if enabled)
 function log() {
@@ -113,7 +117,7 @@ function doMount() {
         mountpoint -q $mountname
         if [[ $? != 0 ]]; then
             mkdir -p $mountname
-            execute mount -t glusterfs -o backup-volfile-servers=${backupservers} ${volserver}:/${volume} ${mountname}
+            execute mount -t glusterfs -o log-file="/var/log/glusterfs/${volserver}-${volume}.log",backup-volfile-servers=${backupservers} ${volserver}:/${volume} ${mountname}
         fi
         # bind must also be protected to ensure nobody unmounts before we
         # can bind

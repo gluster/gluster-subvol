@@ -37,8 +37,33 @@ spec:
               mountPath: /etcssl
             - name: flexpath
               mountPath: /flexpath
-            - name: glusterd
+            - name: var-lib-glusterd
               mountPath: /glusterd
+        #-- Logrotate is disabled because the log files are written into
+        #-- /var/log/* and the logrotate on the host is resolnsible for
+        #-- managing data consumption there.
+        # - name: logrotate
+        #   image: {{ .Values.installerImage }}
+        #   command: [ "/entry_logrotate.sh" ]
+        #   securityContext:
+        #     runAsUser: 0
+        #   env:
+        #     - name: LOGFILE
+        #       value: "*.log"
+        #   volumeMounts:
+        #     - name: var-log-glusterfs
+        #      mountPath: /log
+        - name: logs
+          image: {{ .Values.installerImage }}
+          command: [ "/entry_logtail.sh" ]
+          securityContext:
+            runAsUser: 0
+          env:
+            - name: LOGFILE
+              value: "*.log"
+          volumeMounts:
+            - name: var-log-glusterfs
+              mountPath: /log
       terminationGracePeriodSeconds: 10
       volumes:
         {{ if .Values.tlsSecret -}}
@@ -54,9 +79,13 @@ spec:
           hostPath:
             path: {{ .Values.flexvolPath }}
             type: DirectoryOrCreate
-        - name: glusterd
+        - name: var-lib-glusterd
           hostPath:
-            path: /var/log/glusterd
+            path: /var/lib/glusterd
+            type: DirectoryOrCreate
+        - name: var-log-glusterfs
+          hostPath:
+            path: /var/log/glusterfs
             type: DirectoryOrCreate
   # Make sure DS pod stays running before continuing rollout
   minReadySeconds: 30
