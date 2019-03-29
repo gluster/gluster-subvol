@@ -117,7 +117,14 @@ function doMount() {
         mountpoint -q $mountname
         if [[ $? != 0 ]]; then
             mkdir -p $mountname
-            execute mount -t glusterfs -o log-file="/var/log/glusterfs/${volserver}-${volume}.log",backup-volfile-servers=${backupservers} ${volserver}:/${volume} ${mountname}
+
+            # if systemd-run is available, we should use it to avoid having the fuse process run as a child of kubelet
+            local CMDPREFIX=""
+            if command -v systemd-run >& /dev/null; then
+                CMDPREFIX="systemd-run --scope --"
+            fi
+
+            execute $CMDPREFIX mount -t glusterfs -o log-file="/var/log/glusterfs/${volserver}-${volume}.log",backup-volfile-servers=${backupservers} ${volserver}:/${volume} ${mountname}
         fi
         # bind must also be protected to ensure nobody unmounts before we
         # can bind
