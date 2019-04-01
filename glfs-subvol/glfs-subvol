@@ -153,11 +153,15 @@ function doUnmount() {
     local mountdir=$1
     local msg="Unmounting from ${mountdir}"
 
-    mountpoint -q ${mountdir}
-    if [[ $? != 0 ]]; then
-        result="{\"status\": \"Success\", \"message\": \"Was not mounted.\"}"
-        retResult $RC_OK "$result"
-    fi
+    # mountpoint returns rc=1 for both "Transport endpoint is not connected"
+    # (fuse crash) and in the case where it's not actually mounted. Removing the
+    # following check as I don't think it will be a problem to proceed. Should
+    # get caught by non-zero return from actual unmount call below.
+    #mountpoint -q ${mountdir}
+    #if [[ $? != 0 ]]; then
+    #    result="{\"status\": \"Success\", \"message\": \"Was not mounted.\"}"
+    #    retResult $RC_OK "$result"
+    #fi
 
     # The actual gluster mount (device portion)
     local gdevice=$(grep "$mountdir" /proc/mounts | awk '{ print $1 }')
