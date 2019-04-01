@@ -109,6 +109,8 @@ spec:
         args:
         #-- This needs to match the volume mountpoint
         - "/data"
+        resources:
+{{ toYaml .Values.resources.recycler | indent 10 }}
         securityContext:
           runAsUser: 0
         volumeMounts:
