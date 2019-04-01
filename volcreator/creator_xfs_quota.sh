@@ -51,6 +51,7 @@ spec:
     storage: $capacity
   accessModes:
     - ReadWriteOnce
+    - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
   storageClassName: gluster-subvol
   flexVolume:
