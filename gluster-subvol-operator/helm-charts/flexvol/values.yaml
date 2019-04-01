@@ -5,6 +5,18 @@ flexvolPath: /usr/libexec/kubernetes/kubelet-plugins/volume/exec
 installerImage: quay.io/gluster/gluster-subvol-plugin:latest
 # Node selector controls which nodes run the plugin
 nodeSelector: {}
+# Resource requests/limits
+resources:
+  installer:
+    requests:
+      cpu: "10m"
+      ephemeral-storage: "10Mi"
+      memory: "16Mi"
+  logs:
+    requests:
+      cpu: "10m"
+      ephemeral-storage: "100Mi"
+      memory: "64Mi"
 # Name of the secret that holds the Gluster TLS keys. This must be a
 # Secret in the same namespace as this CR.
 tlsSecret: ""

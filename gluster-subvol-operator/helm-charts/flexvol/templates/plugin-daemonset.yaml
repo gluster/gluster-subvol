@@ -27,6 +27,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+          resources:
+{{ toYaml .Values.resources.installer | indent 12 }}
           volumeMounts:
             {{ if .Values.tlsSecret -}}
             - name: cakeys
@@ -61,6 +63,8 @@ spec:
           env:
             - name: LOGFILE
               value: "*.log"
+          resources:
+{{ toYaml .Values.resources.logs | indent 12 }}
           volumeMounts:
             - name: var-log-glusterfs
               mountPath: /log
