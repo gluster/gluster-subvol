@@ -103,6 +103,10 @@ spec:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
         helm.sh/chart: {{ include "recycler.chart" . }}
     spec:
+      {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+      {{- end }}
       containers:
       - name: volrecycler
         image: {{ .Values.image }}
@@ -117,6 +121,10 @@ spec:
         - name: data
           mountPath: /data
       serviceAccount: {{ include "recycler.fullname" . }}
+      {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+      {{- end }}
       volumes:
       - name: data
         persistentVolumeClaim:

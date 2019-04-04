@@ -1,7 +1,15 @@
+# Affinity controls where the plugin can run
+# https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#node-affinity-beta-feature
+affinity: {}
+#  nodeAffinity:
+#    requiredDuringSchedulingIgnoredDuringExecution:
+#      nodeSelectorTerms:
+#        - matchExpressions:
+#            - key: gluster-flexvol
+#              operator: Exists
+
 # Container image for the subvol recycler
 image: quay.io/gluster/gluster-subvol-volrecycler:latest
-# Node selector controls which nodes can run the recyclers.
-nodeSelector: {}
 # Resource requests/limits
 resources:
   recycler:

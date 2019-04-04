@@ -16,6 +16,10 @@ spec:
       labels:
         gluster-subvol-plugin: {{ include "flexvol.fullname" . }}
     spec:
+      {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+      {{- end }}
       containers:
         - name: plugin-installer
           image: {{ .Values.installerImage }}
@@ -69,6 +73,10 @@ spec:
             - name: var-log-glusterfs
               mountPath: /log
       terminationGracePeriodSeconds: 10
+      {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+      {{- end }}
       volumes:
         {{ if .Values.tlsSecret -}}
         - name: cakeys
