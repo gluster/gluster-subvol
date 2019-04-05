@@ -12,6 +12,22 @@ spec:
       labels:
         name: gluster-subvol-operator
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              # kube < 1.14 uses beta.kubernetes.io/os
+              - key: beta.kubernetes.io/os
+                operator: In
+                values:
+                - linux
+            - matchExpressions:
+              # kube >= 1.14 uses kubernetes.io/os
+              - key: kubernetes.io/os
+                operator: In
+                values:
+                - linux
       serviceAccountName: gluster-subvol-operator
       containers:
         - name: gluster-subvol-operator
