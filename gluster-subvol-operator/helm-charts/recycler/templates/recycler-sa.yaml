@@ -23,9 +23,15 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     helm.sh/chart: {{ include "recycler.chart" . }}
 rules:
+  # Recycler needs to be able to manipulate PVs to mark them available
   - apiGroups: [""]
     resources: ["persistentvolumes"]
     verbs: ["*"]
+  # Recycler needs to run as uid=0 to delete files from the PVs
+  - apiGroups: ["security.openshift.io"]
+    resources: ["securitycontextconstraints"]
+    verbs: ["use"]
+    resourceNames: ["anyuid"]
 
 ---
 
