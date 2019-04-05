@@ -1,12 +1,21 @@
 # Affinity controls where the plugin can run
 # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#node-affinity-beta-feature
-affinity: {}
-#  nodeAffinity:
-#    requiredDuringSchedulingIgnoredDuringExecution:
-#      nodeSelectorTerms:
-#        - matchExpressions:
-#            - key: gluster-flexvol
-#              operator: Exists
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        # kube < 1.14 uses beta.kubernetes.io/os
+        - key: beta.kubernetes.io/os
+          operator: In
+          values:
+          - linux
+      - matchExpressions:
+        # kube >= 1.14 uses kubernetes.io/os
+        - key: kubernetes.io/os
+          operator: In
+          values:
+          - linux
 
 # Set the directory (hostPath) where the flex plugin should be deployed
 # on the nodes
