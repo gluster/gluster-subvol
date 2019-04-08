@@ -27,12 +27,14 @@ resources:
   installer:
     requests:
       cpu: "10m"
-      ephemeral-storage: "10Mi"
+      # Current builds of OCP don't support ephemeral-storage
+      # ephemeral-storage: "10Mi"
       memory: "16Mi"
   logs:
     requests:
       cpu: "10m"
-      ephemeral-storage: "100Mi"
+      # Current builds of OCP don't support ephemeral-storage
+      # ephemeral-storage: "100Mi"
       memory: "64Mi"
 # Name of the secret that holds the Gluster TLS keys. This must be a
 # Secret in the same namespace as this CR.
