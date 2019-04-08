@@ -18,7 +18,7 @@ CA_PEM="${TLS_SECRET_PATH}/ca.pem"
 
 
 function log {
-        msg=$1
+        msg="$*"
         echo "$(date -u) - $msg"
 }
 
@@ -74,6 +74,7 @@ function make_keys {
 
 #-- Install the flex plugin
 PLUGINDIR="${FLEXVOL_PLUGIN_PATH}/rht~glfs-subvol"
+log "I am $(whoami)"
 log "Installing plugin"
 mkdir -p "${PLUGINDIR}"
 mkdir -p "${PLUGINDIR}/.bin"
