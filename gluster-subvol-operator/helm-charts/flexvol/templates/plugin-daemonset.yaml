@@ -25,6 +25,7 @@ spec:
           image: {{ .Values.installerImage }}
           command: [ "/entry_flexvol.sh" ]
           securityContext:
+            privileged: true
             runAsUser: 0
           env:
             - name: NODE_NAME
@@ -72,6 +73,7 @@ spec:
           volumeMounts:
             - name: var-log-glusterfs
               mountPath: /log
+      serviceAccount: '{{ include "flexvol.fullname" . }}'
       terminationGracePeriodSeconds: 10
       {{- with .Values.tolerations }}
       tolerations:
