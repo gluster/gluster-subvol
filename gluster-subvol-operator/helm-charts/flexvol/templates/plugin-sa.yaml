@@ -22,12 +22,14 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     helm.sh/chart: {{ include "flexvol.chart" . }}
 rules:
+{{- if .Capabilities.APIVersions.Has "security.openshift.io/v1" }}
   # Flex plugin needs to run as uid=0 and have access to hostPath to update
   # files on the host
   - apiGroups: ["security.openshift.io"]
     resources: ["securitycontextconstraints"]
     verbs: ["use"]
     resourceNames: ["privileged"]
+{{- end }}
 
 ---
 
