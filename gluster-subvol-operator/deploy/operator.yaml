@@ -50,5 +50,5 @@ spec:
           resources:
             requests:
               cpu: "10m"
-              ephemeral-storage: "10Mi"
+              # ephemeral-storage: "10Mi"
               memory: "64Mi"
