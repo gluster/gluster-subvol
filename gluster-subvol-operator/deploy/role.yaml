@@ -32,6 +32,13 @@ rules:
     verbs:
       - '*'
   - apiGroups:
+      - "rbac.authorization.k8s.io"
+    resources:
+      - roles
+      - rolebindings
+    verbs:
+      - '*'
+  - apiGroups:
       - monitoring.coreos.com
     resources:
       - servicemonitors
@@ -64,5 +71,12 @@ rules:
     resources:
       - clusterroles
       - clusterrolebindings
+    verbs:
+      - '*'
+  # Required in CLusterRole so that PV can have its ownerref set correctly
+  - apiGroups:
+      - gluster-subvol.gluster.org
+    resources:
+      - '*'
     verbs:
       - '*'

@@ -44,6 +44,7 @@ spec:
   accessModes:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
   glusterfs:
     endpoints: {{ include "recycler.fullname" . }}
     path: {{ .Values.supervolName }}
@@ -70,6 +71,7 @@ spec:
   resources:
     requests:
       storage: 1Mi
+  storageClassName: ""
   # Ensure we only bind to the specific PV
   volumeName: {{ include "recycler.fullname" . }}
 

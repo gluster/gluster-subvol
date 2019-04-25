@@ -15,11 +15,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Grab a lock on the uuid file before running the recycler to try and ensure
-# only one recycler runs against the volume at a time.
-# Exit w/ code: 99 if we can't get the lock
+sa_dir=/var/run/secrets/kubernetes.io/serviceaccount
 
-f=/data/supervol-uuid
-
-echo Acquiring lock on $f
-flock -x -n -E99 $f /recycler.sh "$@"
+kubectl --server=https://kubernetes.default.svc.cluster.local \
+        --token="$(cat $sa_dir/token)" \
+        --certificate-authority="$sa_dir/ca.crt" \
+        "$@"
