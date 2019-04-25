@@ -8,11 +8,13 @@ RUN yum update -y && \
     && yum clean all && \
     rm -rf /var/cache/yum
 
+COPY volrecycler/kubectl-sa.sh /
 COPY volrecycler/recycler.sh /
 COPY volrecycler/locker.sh /
 
-RUN chmod 755 /recycler.sh && \
-    chmod 755 /locker.sh
+RUN chmod 755 /kubectl-sa.sh \
+              /locker.sh \
+              /recycler.sh
 
 ARG builddate="(unknown)"
 ARG version="(unknown)"
