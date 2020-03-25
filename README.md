@@ -1,5 +1,11 @@
 # Overview
 
+**Project status:** (Mar 2020) The code in this repository is no longer under
+active development. If you are interested in helping to maintain this project,
+please open an issue or send mail to `gluster-devel@gluster.org`. Assuming no additional interest, this repo will be archived soon.
+
+------
+
 [![Build
 Status](https://travis-ci.org/gluster/gluster-subvol.svg?branch=master)](https://travis-ci.org/gluster/gluster-subvol)
 
