@@ -36,9 +36,9 @@
         namespace: glusterns
         gluster_endpoint: mycluster
         gluster_endpoint_ips:
-        - 192.168.121.44
-        - 192.168.121.69
-        - 192.168.121.35
+        - 192.168.121.10
+        - 192.168.121.20
+        - 192.168.121.30
         service_acct: recycler-sa
         create_sa: true
         enable_anyuid: false
@@ -62,3 +62,13 @@
         namespace: glusterns
         service_acct: recycler-sa
         image: johnstrunk/gluster-subvol-volrecycler:latest
+
+  - include_role:
+      name: gluster-subvol-recycler
+    vars:
+      gluster_subvol_recycler:
+        supervol_name: supervol01
+        gluster_endpoint: mycluster
+        namespace: glusterns
+        service_acct: recycler-sa
+        image: shyamsundarr/gluster-block-subvol-recycler:latest

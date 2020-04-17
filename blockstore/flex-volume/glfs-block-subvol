@@ -1,0 +1,271 @@
+#! /bin/bash
+# vim: set ts=4 sw=4 et :
+
+# Copyright 2018 Red Hat, Inc. and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Based on this spec:
+# https://github.com/kubernetes/community/blob/master/contributors/devel/flexvolume.md
+
+# if DEBUG, log everything to a file as we do it
+DEBUG=1
+DEBUGFILE='/tmp/glfs-block-subvol.out'
+TIME=$(date +%s.%N)
+
+RC_OK=0
+RC_FAIL=1
+
+cd "$(dirname "$0")" || exit 2
+scriptdir="$PWD"
+cd "$OLDPWD" || exit 2
+MOUNTPATH=${scriptdir}/mnt/blockstore
+LOCKPATH=/var/lock/glfs-block-subvol
+
+#-- Make an entry in the log file (if enabled)
+function log() {
+    if [[ $DEBUG -gt 0 ]]; then
+        echo "[$TIME] $*" >> $DEBUGFILE
+    fi
+}
+
+#-- Log a command, then execute it
+function execute() {
+    log "! $*"
+    "$@"
+}
+
+#-- Return the result of the operation
+function retResult() {
+    local rc=$1
+    local result="$2"
+    log "< $rc $result"
+    echo "$result"
+    exit "$rc"
+}
+
+function doInit() {
+    local result
+    local msg=""
+    mkdir -p "$MOUNTPATH" >& /dev/null || \
+        msg="${msg} Unable to create ${MOUNTPATH}"
+    mkdir -p "$LOCKPATH" >& /dev/null || \
+        msg="${msg} Unable to create ${LOCKPATH}"
+    if [[ "x$msg" != "x" ]] ; then
+        result="{\"status\": \"Failure\", \"message\": \"${msg}\"}"
+    else
+        result="{\"status\": \"Success\", \"capabilities\": {\"attach\": false, \"selinuxRelabel\": false}}"
+    fi
+    retResult $RC_OK "$result"
+}
+
+function mountName() {
+    local vserver=$1
+    local volume=$2
+    local subdir=$3
+    echo "$vserver-$volume" | sed 's_/_-_g'
+}
+
+function doMount() {
+    # Example plugin call:
+    # mount /var/lib/kubelet/pods/4a5ac08a-844b-11e7-9415-5254002b3544/volumes/rht~glfs-subvol/vol1
+    # { "cluster":"glusterfs-cluster",
+    #   "dir":"blockstore/00/00",
+    #   "kubernetes.io/<fields>,
+    #   ...,
+    #   "volume":"vol1",
+    #   "file":"0000"
+    #   }
+    # How we want to mount:
+    # mount -t glusterfs -o backup-volfile-servers=192.168.121.201:192.168.121.233 192.168.121.172:/vol1 /tmp/t
+    local mountdir="$1"
+    local json="$2"
+
+    local cluster
+    cluster=$(echo "$2" | jq -r '.cluster')
+    local volume
+    volume=$(echo "$json" | jq -r '.volume')
+    local subdir
+    subdir=$(echo "$json" | jq -r '.dir')
+    local blockfile
+    blockfile=$(echo "$json" | jq -r '.file')
+    if [ ! -n "${cluster}" ] || [ ! -n "${volume}" ] || [ ! -n "${subdir}" ] || [ ! -n "${blockfile}" ]; then
+        local msg="cluster=$cluster volume=$volume subdir=$subdir blockfile=$blockfile"
+        local result="{\"status\": \"Failure\", \"message\": \"$msg\"}"
+        retResult $RC_FAIL "$result"
+        return
+    fi
+
+    # cluster is "server1:server2:..."
+    # Take the 1st as volserver and rest as backups
+    local volserver
+    volserver=$(echo "$cluster" | sed -r 's/^([^:]+):?(.*)/\1/')
+    local backupservers
+    backupservers=$(echo "$cluster" | sed -r 's/^([^:]+):?(.*)/\2/')
+
+    local mntsuffix
+    mntsuffix=$(mountName "$volserver" "$volume" "$subdir")
+    local mountname
+    mountname=${MOUNTPATH}/${mntsuffix}
+
+    log volserver "$volserver"
+    log backupservers "$backupservers"
+
+    local msg="volserver=$volserver backup=$backupservers volume=$volume mountpoint=$mountname bindto=$mountdir"
+    if [ ! -n "${volserver}" ] || [ ! -n "${backupservers}" ] || [ ! -n "${volume}" ] || [ ! -n "${mountname}" ]; then
+        local result="{\"status\": \"Failure\", \"message\": \"$msg\"}"
+        retResult $RC_FAIL "$result"
+        return
+    fi
+
+    #-- This script can potentially be called multiple times in parallel by
+    #-- different pods that are starting. We need to ensure that the big
+    #-- volume is mounted atomically wrt other invocations.
+    #-- See man 1 flock for this structure
+    local lockfile="${LOCKPATH}/${mntsuffix}.lock"
+    log "Using lockfile: $lockfile"
+    ( flock 9 || exit 99
+        # if main vol not mounted, we need to mount it
+        if ! mountpoint -q "$mountname"; then
+            mkdir -p "$mountname"
+            execute mount -t glusterfs -o "backup-volfile-servers=${backupservers}" "${volserver}:/${volume}" "${mountname}"
+        fi
+        if mountpoint -q "$mountname"; then
+            # Protect loop mount as well within the lock, to ensure gluster
+            # volume is not unmounted before this is complete
+            execute mount "${mountname}/${subdir}/${blockfile}" "${mountdir}" -t xfs -o loop,discard
+            # TODO: if the above mount failed and this instance was resposible
+            #       for mounting the main vol, then unmount the main vol
+        fi
+        # force unlock due to fork of mount process
+        flock -u -n 9
+    ) 9>> "${lockfile}"
+    if [[ $? == 99 ]]; then
+        log "flock of $lockfile failed."
+    fi
+
+    if mountpoint -q "${mountdir}"; then
+        local result="{\"status\": \"Success\", \"message\": \"$msg\"}"
+        retResult $RC_OK "$result"
+    else
+        local result="{\"status\": \"Failure\", \"message\": \"$msg\"}"
+        retResult $RC_FAIL "$result"
+    fi
+}
+
+function doUnmount() {
+    # unmount /var/lib/kubelet/pods/79cd720f-868e-11e7-b571-5254002b3544/volumes/rht~glfs-subvol/vol1
+    local mountdir=$1
+    local msg="Unmounting from ${mountdir}"
+
+    if ! mountpoint -q "${mountdir}"; then
+        result="{\"status\": \"Success\", \"message\": \"Was not mounted.\"}"
+        retResult $RC_OK "$result"
+    fi
+
+    # The actual gluster mount (device portion)
+    # NOTE: losetup usage
+    #  Given a mount point, /proc/mounts will list the loop device.
+    #  To go from the loop device to the gluster mount, we need to determine
+    #  the backing path for the device mounted as the loop device.
+    #  'mount' command does this by peeking into,
+    #   - /sys/dev/block/<MAJOR>:<MINOR>/loop/backing_file
+    #  losetup does the same as mount, and gives extra control based on the
+    #  loop device. Hence losetup is used to determine the backing file and
+    #  from there the gdevicedir and the mntsuffix.
+    #  losetup comes from the util-linux package (like mount and flock)
+    local ldevice
+    ldevice=$(grep "$mountdir" /proc/mounts | awk '{ print $1 }')
+    local ldevicefile
+    ldevicefile=$(losetup -l "${ldevice}" -O NAME,BACK-FILE | grep "${ldevice}" | awk '{print $2}')
+    local gdevicedir
+    gdevicedir=$(echo "$ldevicefile" | grep -oE "${MOUNTPATH}/[^\/]*")
+    local mntsuffix
+    mntsuffix=$(echo "$gdevicedir" | sed -r "s#${MOUNTPATH}/##")
+    log "ldevice=$ldevice"
+    log "ldevicefile=$ldevicefile"
+    log "gdevicedir=$gdevicedir"
+    log "mntsuffix=$mntsuffix"
+
+    local result
+    result=""
+    local rc
+    rc=""
+    if execute umount "${mountdir}"; then
+        result="{\"status\": \"Success\", \"message\": \"$msg\"}"
+        rc=$RC_OK
+    else
+        result="{\"status\": \"Failure\", \"message\": \"$msg\"}"
+        rc=$RC_FAIL
+    fi
+
+    # Try to be a good citizen and clean up after ourselves...
+    # If we were the last user of the big volume, unmount it.
+    # Note, we must use the same lock here as we do for mounting.
+    local lockfile="${LOCKPATH}/${mntsuffix}.lock"
+    log "Using lockfile: $lockfile"
+    ( flock 9 || exit 99
+        local mcount
+        # TODO: In a tight loop test for mounting and unmounting devices, found
+        #       that in certain cases the losetup returns 1 device as in use,
+        #       and hence the unmount of the gluster volume is not done.
+        #       Subsequently checking if losetup still reports the same, comes
+        #       out -ve, which looks like some stale reporting by losetup.
+        #       This is not addressed, as it does not cause an issue, and at a
+        #       later mount/unmount cycle the gluster volume could get unmounted
+        mcount=$(losetup --list -O BACK-FILE | grep -c "$gdevicedir")
+        log "$gdevicedir has $mcount loop mounted files"
+        if [[ "$mcount" -eq 0 ]]; then
+            # We were the last
+            log "We were last user of $gdevicedir; unmounting it."
+            execute umount "$gdevicedir"
+            execute rmdir "$gdevicedir"
+            # Unfortunately, we need to leave the .lock file or we lose
+            # protection
+        fi
+    ) 9>> "${lockfile}"
+    if [[ $? == 99 ]]; then
+        log "flock of $lockfile failed."
+    fi
+
+    retResult $rc "$result"
+}
+
+# It is assumed that coreutils and util-linux are installed, thus providing,
+#   - coreutils: date, dirname, echo, mkdir, rmdir
+#   - util-linux: mount, losetup, umount, flock
+for chkcmd in jq sed grep awk; do
+    if ! command -v "$chkcmd" >/dev/null; then
+        rMessage="{\"status\": \"Failure\", \"message\": \"Unable to find '${chkcmd}' in PATH. Please install ${chkcmd}.\"}"
+        retResult $RC_FAIL "$rMessage"
+    fi
+done
+
+log "> $*"
+cmd=$1
+shift
+case $cmd in
+init)
+    doInit "$@"
+    ;;
+mount)
+    doMount "$@"
+    ;;
+unmount)
+    doUnmount "$@"
+    ;;
+*)
+    result="{\"status\": \"Not supported\", \"message\": \"$cmd is not supported\"}"
+    retResult $RC_OK "$result"
+    ;;
+esac

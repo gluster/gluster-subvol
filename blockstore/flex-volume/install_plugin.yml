@@ -1,0 +1,38 @@
+---
+##############################
+# This playbook installs the glfs-subvol flex volume plugin onto the
+# kubernetes nodes.
+
+- hosts: all
+  become: true
+  vars:
+    install_loc: /usr/libexec/kubernetes/kubelet-plugins/volume/exec/rht~glfs-block-subvol
+  tasks:
+    - name: Make sure plugin dir exists
+      file:
+        name: "{{ install_loc }}"
+        state: directory
+
+    - name: Install required dependencies
+      yum:
+        state: present
+        name: "{{ item }}"
+      with_items:
+        - coreutils
+        - util-linux
+        - sed
+        - grep
+        - gawk
+        - jq
+
+    - name: Copy plugin to workers
+      template:
+        src: glfs-block-subvol
+        dest: "{{ install_loc }}/glfs-block-subvol"
+        mode: 0755
+
+    # Kubelet only needs to be restarted pre 1.8, and only on 1st install.
+    #- name: Restart kubelet
+    #  systemd:
+    #    name: kubelet
+    #    state: restarted

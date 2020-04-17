@@ -1,0 +1,36 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ pod_instancename }}
+spec:
+  accessModes:
+    - {{ gluster_subvol.accessmode }}
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: {{ gluster_subvol.storageclass }}
+
+---
+
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ pod_instancename }}
+spec:
+  template:
+    metadata:
+      name: {{ pod_instancename }}
+    spec:
+      containers:
+      - name: {{ pod_instancename }}
+        image: bash
+        command: ["bash", "-c", "echo 'this is a test' > /target/im_a_file"]
+        volumeMounts:
+        - name: data
+          mountPath: /target
+      restartPolicy: Never
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ pod_instancename }}
